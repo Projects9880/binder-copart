@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# LibreOffice lock files
+.~lock.*#
+
+# Microsoft Office temp files
+~$*
+
+# Archive exports (folders are the canonical source; zips are redundant copies)
+*.zip
+
+# Node / Next.js (also covered by copart-dashboard/.gitignore)
+node_modules/
+.next/
+
+# Client reports — EXCLUDED while the GitHub repo is public (see AUDIT.md 2.2).
+# Remove these lines and commit the files once the repo is private.
+Copart/3. Relatórios/
+Developing Data Structure for Copart Brazil's Auction Platform/copart_novo_relatorio_executivo_growth_v2.html
