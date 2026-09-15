@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -42,6 +43,10 @@ export function BarChart({
   height = 260,
   stacked = false,
 }: BarChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div style={{ height }} className="rounded-xl bg-[#f4f7fb]" />;
+
   const data = {
     labels,
     datasets: datasets.map((ds, i) => ({
@@ -96,6 +101,7 @@ export function BarChart({
     scales: {
       x: {
         stacked,
+        ...(horizontal ? { beginAtZero: true, min: 0 } : {}),
         grid: horizontal ? { color: "#dfe6ee" } : { display: false },
         border: { display: false },
         ticks: {
@@ -112,6 +118,7 @@ export function BarChart({
       },
       y: {
         stacked,
+        ...(!horizontal ? { beginAtZero: true, min: 0 } : {}),
         grid: horizontal ? { display: false } : { color: "#dfe6ee", lineWidth: 1 },
         border: { display: false },
         ticks: {

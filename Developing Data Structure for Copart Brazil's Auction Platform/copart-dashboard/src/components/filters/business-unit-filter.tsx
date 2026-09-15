@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
   Select,
   SelectContent,
@@ -17,8 +16,9 @@ export function BusinessUnitFilter() {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">Todas as Unidades</SelectItem>
-        <SelectItem value="leiloes">Leilões (Core)</SelectItem>
-        <SelectItem value="venda_direta">Venda Direta</SelectItem>
+        <SelectItem value="leilao_compra">Leilão/Compra</SelectItem>
+        <SelectItem value="select_venda">Select/Venda</SelectItem>
+        <SelectItem value="select_compra">Select/Compra</SelectItem>
       </SelectContent>
     </Select>
   );

@@ -15,7 +15,7 @@ interface GaugeChartProps {
 }
 
 export function GaugeChart({ value, max, title, color = '#00b8cf' }: GaugeChartProps) {
-  const percentage = Math.min(100, Math.round((value / max) * 100));
+  const percentage = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   
   const data = {
     labels: ['Progresso', 'Restante'],

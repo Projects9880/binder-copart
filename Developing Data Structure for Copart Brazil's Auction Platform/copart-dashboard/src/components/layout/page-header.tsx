@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
-import { Calendar, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { DataSourceModal } from "@/components/layout/data-source-modal";
+import { DATA_ORIGIN_LABEL } from "@/lib/constants";
 
 interface PageHeaderProps {
   title: string;
@@ -8,6 +10,8 @@ interface PageHeaderProps {
   badgeColor?: string;
   children?: React.ReactNode;
   className?: string;
+  dataOriginLabel?: string;
+  actions?: React.ReactNode;
 }
 
 export function PageHeader({
@@ -17,9 +21,11 @@ export function PageHeader({
   badgeColor = "#00b8cf",
   children,
   className,
+  dataOriginLabel = DATA_ORIGIN_LABEL,
+  actions,
 }: PageHeaderProps) {
   return (
-    <div className={cn("sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-[#dfe6ee] px-8 py-4", className)}>
+    <div className={cn("z-10 bg-white/90 backdrop-blur-md border-b border-[#dfe6ee] px-4 sm:px-8 py-4", className)}>
       <div className="flex items-center justify-between gap-4 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3 min-w-0">
           {badge && (
@@ -35,11 +41,16 @@ export function PageHeader({
             {subtitle && <p className="text-sm text-[#6c7685] mt-0.5 truncate">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 text-xs text-[#6c7685]">
-          <Calendar className="w-3.5 h-3.5" />
-          <span className="font-semibold">28/06 – 04/07/2026</span>
-          <RefreshCw className="w-3.5 h-3.5 ml-2" />
-          <span>Atualizado 11h</span>
+        <div className="flex items-center gap-3 flex-shrink-0 text-xs text-[#6c7685]">
+          {actions}
+          <DataSourceModal />
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#e8f8ef] px-3 py-1.5 rounded-xl border border-[#00a85a]/30">
+            <span className="font-semibold text-[#007342]">{dataOriginLabel}</span>
+          </div>
+          <div className="hidden md:flex items-center gap-1.5 bg-[#f4f7fb] px-3 py-1.5 rounded-xl border border-[#dfe6ee]">
+            <RefreshCw className="w-3.5 h-3.5 text-[#00a85a]" />
+            <span className="font-medium text-[#344255]">Atualizado 11h</span>
+          </div>
         </div>
       </div>
       {children && (
@@ -51,7 +62,7 @@ export function PageHeader({
 
 export function PageContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("p-8 max-w-[1400px] mx-auto w-full", className)}>
+    <div className={cn("p-4 sm:p-8 max-w-[1400px] mx-auto w-full", className)}>
       {children}
     </div>
   );
@@ -63,10 +74,15 @@ export function SectionTitle({ children, className }: { children: React.ReactNod
   );
 }
 
-export function CardWrapper({ children, title, className }: { children: React.ReactNode; title?: string; className?: string }) {
+export function CardWrapper({ children, title, subtitle, className }: { children: React.ReactNode; title?: string; subtitle?: string; className?: string }) {
   return (
     <div className={cn("bg-white border border-[#dfe6ee] rounded-2xl p-5", className)}>
-      {title && <h3 className="text-sm font-black text-[#0b1f3a] mb-4">{title}</h3>}
+      {title && (
+        <div className="mb-4">
+          <h3 className="text-sm font-black text-[#0b1f3a]">{title}</h3>
+          {subtitle && <p className="text-xs text-[#6c7685] mt-0.5">{subtitle}</p>}
+        </div>
+      )}
       {children}
     </div>
   );

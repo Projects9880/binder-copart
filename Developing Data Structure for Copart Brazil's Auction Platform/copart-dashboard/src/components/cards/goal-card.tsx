@@ -6,9 +6,9 @@ interface GoalCardProps {
   current: number;
   target: number;
   percentage: number;
-  delta: number;
-  deltaLabel: string;
-  deltaType: "good" | "bad" | "neutral";
+  delta?: number;
+  deltaLabel?: string;
+  deltaType?: "good" | "bad" | "neutral";
   color?: string;
   className?: string;
 }
@@ -25,7 +25,8 @@ export function GoalCard({
   className,
 }: GoalCardProps) {
   const capped = Math.min(percentage, 100);
-  const DeltaIcon = delta >= 0 ? ArrowUpRight : ArrowDownRight;
+  const showDelta = Boolean(deltaLabel);
+  const DeltaIcon = (delta ?? 0) >= 0 ? ArrowUpRight : ArrowDownRight;
 
   return (
     <div
@@ -61,17 +62,19 @@ export function GoalCard({
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-black text-[#0b1f3a]">{percentage.toFixed(1)}% da meta</span>
-        <span
-          className={cn(
-            "flex items-center gap-0.5 text-xs font-bold rounded-full px-2 py-0.5",
-            deltaType === "good" && "text-[#007342] bg-[#e8f8ef]",
-            deltaType === "bad" && "text-[#b2162e] bg-[#fdecee]",
-            deltaType === "neutral" && "text-[#667085] bg-[#f0f2f5]"
-          )}
-        >
-          <DeltaIcon className="w-3 h-3" />
-          {delta > 0 ? "+" : ""}{delta.toFixed(2)}% {deltaLabel}
-        </span>
+        {showDelta && (
+          <span
+            className={cn(
+              "flex items-center gap-0.5 text-xs font-bold rounded-full px-2 py-0.5",
+              deltaType === "good" && "text-[#007342] bg-[#e8f8ef]",
+              deltaType === "bad" && "text-[#b2162e] bg-[#fdecee]",
+              deltaType === "neutral" && "text-[#667085] bg-[#f0f2f5]"
+            )}
+          >
+            <DeltaIcon className="w-3 h-3" />
+            {(delta ?? 0) > 0 ? "+" : ""}{(delta ?? 0).toFixed(2)}% {deltaLabel}
+          </span>
+        )}
       </div>
     </div>
   );

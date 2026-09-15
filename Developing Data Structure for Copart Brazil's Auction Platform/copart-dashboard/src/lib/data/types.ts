@@ -1,40 +1,43 @@
 // ============================================================================
-// Copart Brasil — TypeScript Data Types
-// Mirrors BigQuery tables from Dicionário de Dados
+// Copart Brasil — TypeScript Data Types (SPEC v2)
 // ============================================================================
 
-// --- Enumerations ---
-
 export type ConversionType =
-  | 'entrante'
-  | 'habilitado'
-  | 'licitante'
-  | 'arrematante'
-  | 'conversa_whatsapp';
+  | "entrante"
+  | "habilitado"
+  | "licitante"
+  | "arrematante"
+  | "conversa_whatsapp"
+  | "veiculo_captado"
+  | "veiculo_vendido";
 
 export type Channel =
-  | 'META'
-  | 'GOOGLE'
-  | 'TIKTOK'
-  | 'ORGANIC'
-  | 'WHATSAPP'
-  | 'DIRECT';
+  | "META"
+  | "GOOGLE"
+  | "TIKTOK"
+  | "ORGANIC"
+  | "DIRECT"
+  | "RD_STATION"
+  | "BLIP";
 
-export type CampaignType = 'leilao' | 'venda_direta';
+export type BusinessUnit = "leilao_compra" | "select_venda" | "select_compra";
 
-export type DeviceCategory = 'desktop' | 'mobile' | 'tablet';
+export type CampaignType = BusinessUnit;
+
+export type FunnelKey = "leilao" | "select_venda" | "select_compra";
+
+export type DeviceCategory = "desktop" | "mobile" | "tablet";
 
 export type AttributionModel =
-  | 'first_touch'
-  | 'last_touch'
-  | 'linear'
-  | 'time_decay';
+  | "first_touch"
+  | "last_touch"
+  | "linear"
+  | "time_decay";
 
-export type AlertSeverity = 'critical' | 'warning' | 'info';
+export type AlertSeverity = "critical" | "warning" | "info";
 
-// --- Core Tables (BigQuery mirrors) ---
+export type DataOrigin = "mock_spec" | "weekly_report";
 
-/** Mirrors: staging_conversion_events */
 export interface ConversionEvent {
   conversion_id: string;
   user_id: string;
@@ -50,7 +53,6 @@ export interface ConversionEvent {
   created_at: string;
 }
 
-/** Mirrors: staging_campaign_performance */
 export interface CampaignPerformance {
   performance_id: string;
   date: string;
@@ -65,7 +67,6 @@ export interface CampaignPerformance {
   habilitados: number;
   licitantes_por_veiculo: number;
   conversas_whatsapp: number;
-  // Calculated fields
   taxa_habilitacao: number;
   ctr: number;
   cpc: number;
@@ -75,7 +76,6 @@ export interface CampaignPerformance {
   created_at: string;
 }
 
-/** Mirrors: staging_user_journey */
 export interface UserJourney {
   user_id: string;
   first_touch_date: string;
@@ -97,10 +97,9 @@ export interface UserJourney {
   created_at: string;
 }
 
-/** Mirrors: mart_daily_metrics */
 export interface DailyMetrics {
   date: string;
-  channel: Channel | 'TOTAL';
+  channel: Channel | "TOTAL";
   campaign_name: string;
   campaign_type: CampaignType;
   entrantes: number;
@@ -113,8 +112,6 @@ export interface DailyMetrics {
   custo_por_habilitado: number;
   roas: number;
 }
-
-// --- Dashboard View Models ---
 
 export interface OverviewKPIs {
   pageViews: MetricValue;
@@ -136,7 +133,7 @@ export interface MetricValue {
   formatted: string;
   delta: number;
   deltaFormatted: string;
-  deltaType: 'good' | 'bad' | 'neutral';
+  deltaType: "good" | "bad" | "neutral";
   label: string;
   period: string;
 }
@@ -148,7 +145,8 @@ export interface GoalProgress {
   percentage: number;
   delta: number;
   deltaLabel: string;
-  deltaType: 'good' | 'bad' | 'neutral';
+  deltaType: "good" | "bad" | "neutral";
+  unit?: BusinessUnit;
 }
 
 export interface FunnelStage {
@@ -160,7 +158,9 @@ export interface FunnelStage {
 
 export interface FunnelData {
   stages: FunnelStage[];
-  type: 'leilao' | 'venda_direta';
+  type: FunnelKey;
+  title?: string;
+  subtitle?: string;
 }
 
 export interface WeeklyRegistration {
@@ -172,6 +172,8 @@ export interface WeeklyRegistration {
 
 export interface ChannelPerformance {
   channel: string;
+  channelId?: Channel;
+  unit?: BusinessUnit;
   entrantes: number;
   habilitados: number;
   taxa_habilitacao: number;
@@ -183,6 +185,7 @@ export interface ChannelPerformance {
 export interface CampaignScorecard {
   campaign_name: string;
   channel: Channel;
+  campaign_type: CampaignType;
   impressions: number | null;
   clicks: number | null;
   ctr: number | null;
@@ -193,15 +196,24 @@ export interface CampaignScorecard {
   cpc: number | null;
   custo_por_entrante: number;
   conversas: number | null;
-  status: 'on_target' | 'below_target' | 'critical';
+  status: "on_target" | "below_target" | "critical";
+  owner?: string;
 }
 
 export interface AttributionComparison {
   campaign_name: string;
+  unit: BusinessUnit;
   first_touch: number;
   last_touch: number;
   linear: number;
   time_decay: number;
+}
+
+export interface FunnelStageAttribution {
+  campaign_name: string;
+  channel: Channel;
+  unit: BusinessUnit;
+  stages: Record<string, number>;
 }
 
 export interface Alert {
@@ -214,6 +226,7 @@ export interface Alert {
   action: string;
   responsavel: string;
   timestamp: string;
+  isMedia?: boolean;
 }
 
 export interface DataDiscrepancy {
@@ -221,7 +234,7 @@ export interface DataDiscrepancy {
   source_b: string;
   discrepancy: number;
   sla: number;
-  status: 'ok' | 'warning' | 'critical';
+  status: "ok" | "warning" | "critical";
 }
 
 export interface ActionRecommendation {
@@ -234,6 +247,7 @@ export interface ActionRecommendation {
   budget_change?: string;
   responsavel: string;
   deadline: string;
+  isMedia?: boolean;
 }
 
 export interface SocialMetrics {
@@ -247,8 +261,8 @@ export interface SocialPlatform {
   baseDelta: string;
   mainMetric: number;
   mainDelta: number;
-  mainDeltaType: 'good' | 'bad' | 'neutral';
-  details: { label: string; value: string; delta: string; deltaType: 'good' | 'bad' }[];
+  mainDeltaType: "good" | "bad" | "neutral";
+  details: { label: string; value: string; delta: string; deltaType: "good" | "bad" }[];
 }
 
 export interface TrafficSource {
@@ -257,33 +271,222 @@ export interface TrafficSource {
   junho: number;
 }
 
-// --- Dashboard Filters ---
+export type MarketingChannel =
+  | "SEO"
+  | "INSTAGRAM_ORGANIC"
+  | "FACEBOOK_ORGANIC"
+  | "META_ADS"
+  | "GOOGLE_ADS"
+  | "TIKTOK"
+  | "RD_STATION"
+  | "BLIP";
+
+export interface ChannelGoalMetric {
+  current: number;
+  target: number;
+  percentage: number;
+}
+
+export interface ChannelGoal {
+  channel: MarketingChannel;
+  channelLabel: string;
+  color: string;
+  icon: string;
+  metrics: {
+    entrantes: ChannelGoalMetric;
+    habilitados: ChannelGoalMetric;
+  };
+  delta: number;
+  deltaType: "good" | "bad" | "neutral";
+  hasData?: boolean;
+  sourceNote?: string;
+}
+
+export type TrafficMixId = "direct" | "organic" | "paid" | "other";
+
+export interface TrafficMixBucket {
+  id: TrafficMixId;
+  label: string;
+  sessions: number;
+  newUsers: number;
+  shareSessions: number;
+  shareNewUsers: number;
+}
+
+export interface VolumeRankRow {
+  channel: string;
+  channelId: string;
+  entrantes: number;
+  shareOfCadastro: number;
+  contributionToGoal: number;
+}
+
+export interface MediaEfficiencyRow {
+  channel: "META" | "GOOGLE";
+  channelLabel: string;
+  unit: BusinessUnit;
+  spend: number;
+  nativeResults: number;
+  resultLabel: string;
+  cpa: number;
+  volumeShare: number;
+}
+
+export interface OverallGoalSummary {
+  entrantes: ChannelGoalMetric;
+  habilitados: ChannelGoalMetric;
+}
+
+export interface ConversionTouchpoint {
+  channel: string;
+  source: string;
+  timestamp: string;
+  type: "visit" | "interaction" | "conversion";
+}
+
+export interface ConversionPath {
+  id: string;
+  userId: string;
+  conversionType: ConversionType;
+  conversionDate: string;
+  touchpoints: ConversionTouchpoint[];
+  totalTouchpoints: number;
+  daysToConversion: number;
+  firstChannel: string;
+  lastChannel: string;
+  value?: number;
+}
+
+export interface ConversionPathFilters {
+  conversionType: ConversionType | "ALL";
+  channelInPath: MarketingChannel | "ALL";
+  minTouchpoints: number;
+  maxTouchpoints: number;
+  dateRange: { start: string; end: string };
+}
+
+export interface JourneyPatternRank {
+  pattern: string;
+  count: number;
+  habilitados: number;
+  share: number;
+}
+
+export interface ChannelJourneyShare {
+  channel: string;
+  appearances: number;
+  journeys: number;
+  share: number;
+}
+
+export interface JourneyInsights {
+  totalJourneys: number;
+  habilitados: number;
+  taxaHabilitacao: number;
+  avgTouchpoints: number;
+  frequent: JourneyPatternRank[];
+  byHabilitados: JourneyPatternRank[];
+  channelShare: ChannelJourneyShare[];
+}
+
+export interface RegionalRow {
+  geo: string;
+  label: string;
+  entrantes: number;
+  habilitados: number;
+  taxa_habilitacao: number;
+  gasto: number;
+  weight: number;
+}
+
+export interface KpiEvolutionPoint {
+  period: string;
+  platform: string;
+  entrantes: number;
+  habilitados: number;
+  gasto: number;
+}
+
+export interface AlertThreshold {
+  id: string;
+  metric: string;
+  maxDropPercent: number;
+  slaPercent: number;
+  configurable: boolean;
+}
+
+export interface VitoriaCoverageItem {
+  vision: string;
+  status: "absorvida" | "parcial" | "pendente";
+  location: string;
+}
+
+export interface CreativePiece {
+  id: string;
+  source: "meta" | "google";
+  channel: Channel;
+  unit: BusinessUnit;
+  name: string;
+  campaign: string;
+  adGroup: string;
+  delivery: string;
+  adType: string;
+  format: string;
+  quality: string | null;
+  qualityHint: string | null;
+  finalUrl: string | null;
+  headlines: string[];
+  descriptions: string[];
+  hasImageIds: boolean;
+  spend: number;
+  impressions: number;
+  reach: number;
+  clicks: number;
+  ctr: number;
+  resultsCadastro: number;
+  resultsLanding: number;
+  conversas: number;
+  conversions: number;
+}
 
 export interface DashboardFilters {
   dateRange: {
     start: string;
     end: string;
   };
-  channel: Channel | 'ALL';
-  campaignType: CampaignType | 'ALL';
+  channel: Channel | "ALL";
+  campaignType: CampaignType | "ALL";
+  campaign: string;
+  funnel: FunnelKey | "ALL";
   geo: string;
-  period: 'daily' | 'weekly' | 'monthly';
+  period: "daily" | "weekly" | "monthly";
 }
-
-// --- Data Service Interface ---
 
 export interface DataService {
   getOverviewKPIs(filters: DashboardFilters): Promise<OverviewKPIs>;
   getGoalProgress(filters: DashboardFilters): Promise<GoalProgress[]>;
   getWeeklyRegistrations(filters: DashboardFilters): Promise<WeeklyRegistration[]>;
-  getFunnelData(type: 'leilao' | 'venda_direta', filters: DashboardFilters): Promise<FunnelData>;
-  getChannelPerformance(type: 'leilao' | 'venda_direta', filters: DashboardFilters): Promise<ChannelPerformance[]>;
+  getFunnelData(type: FunnelKey, filters: DashboardFilters): Promise<FunnelData>;
+  getChannelPerformance(type: FunnelKey, filters: DashboardFilters): Promise<ChannelPerformance[]>;
   getCampaignScorecards(filters: DashboardFilters): Promise<CampaignScorecard[]>;
   getAttributionComparison(filters: DashboardFilters): Promise<AttributionComparison[]>;
-  getAlerts(): Promise<Alert[]>;
+  getFunnelStageAttribution(filters: DashboardFilters): Promise<FunnelStageAttribution[]>;
+  getAlerts(filters?: DashboardFilters): Promise<Alert[]>;
   getDataDiscrepancies(): Promise<DataDiscrepancy[]>;
   getRecommendations(): Promise<ActionRecommendation[]>;
   getSocialMetrics(): Promise<SocialMetrics>;
-  getTrafficSources(): Promise<TrafficSource[]>;
+  getTrafficSources(filters: DashboardFilters): Promise<TrafficSource[]>;
+  getTrafficMix(filters: DashboardFilters): Promise<TrafficMixBucket[]>;
+  getVolumeRanking(filters: DashboardFilters): Promise<VolumeRankRow[]>;
+  getMediaEfficiency(filters: DashboardFilters): Promise<MediaEfficiencyRow[]>;
   getTrendData(metric: string, days: number, filters: DashboardFilters): Promise<{ date: string; value: number }[]>;
+  getChannelGoals(filters: DashboardFilters): Promise<{ channels: ChannelGoal[]; overall: OverallGoalSummary }>;
+  getConversionPaths(filters: ConversionPathFilters): Promise<ConversionPath[]>;
+  getJourneyInsights(filters: DashboardFilters): Promise<JourneyInsights>;
+  getRegionalPerformance(filters: DashboardFilters): Promise<RegionalRow[]>;
+  getKpiEvolution(filters: DashboardFilters, grain: "weekly" | "monthly"): Promise<KpiEvolutionPoint[]>;
+  getAlertThresholds(): Promise<AlertThreshold[]>;
+  getVitoriaCoverage(): Promise<VitoriaCoverageItem[]>;
+  getCreatives(filters: DashboardFilters): Promise<CreativePiece[]>;
+  getDataOrigin(): DataOrigin;
 }

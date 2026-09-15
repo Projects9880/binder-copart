@@ -12,9 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const STATUS_CONFIG = {
-  on_target: { label: "No target", icon: "✅", variant: "outline" as const, className: "text-[#007342] border-[#00a85a] bg-[#e8f8ef]" },
-  below_target: { label: "Below target", icon: "⚠️", variant: "outline" as const, className: "text-[#8c5700] border-[#c77a00] bg-[#fff4df]" },
-  critical: { label: "Crítico", icon: "🔴", variant: "outline" as const, className: "text-[#b2162e] border-[#cf3044] bg-[#fdecee]" },
+  on_target: { label: "No alvo", icon: "ok", variant: "outline" as const, className: "text-[#007342] border-[#00a85a] bg-[#e8f8ef]" },
+  below_target: { label: "Abaixo da meta", icon: "aviso", variant: "outline" as const, className: "text-[#8c5700] border-[#c77a00] bg-[#fff4df]" },
+  critical: { label: "Crítico", icon: "crit", variant: "outline" as const, className: "text-[#b2162e] border-[#cf3044] bg-[#fdecee]" },
 };
 
 interface CampaignTableProps {
@@ -56,7 +56,7 @@ export function CampaignTable({ data, showConversas = false }: CampaignTableProp
             const isEven = i % 2 === 0;
             return (
               <TableRow
-                key={row.campaign_name}
+                key={`${row.channel}-${row.campaign_name}-${i}`}
                 className={cn(
                   "transition-colors hover:bg-[#f8fbff]",
                   isEven ? "bg-white" : "bg-[#fafbfd]"
@@ -112,7 +112,7 @@ export function CampaignTable({ data, showConversas = false }: CampaignTableProp
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={cn("text-[10px] font-bold", status.className)}>
-                    {status.icon} {status.label}
+                    {status.label}
                   </Badge>
                 </TableCell>
               </TableRow>

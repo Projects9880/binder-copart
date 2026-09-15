@@ -4,74 +4,112 @@ import { GoalCard } from "@/components/cards/goal-card";
 import { DoughnutChart } from "@/components/charts/doughnut-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { dataService } from "@/lib/data/data-service";
+import { filtersFromSearchParams } from "@/lib/page-filters";
+import { formatDateRangeLabel } from "@/lib/filters";
+import type { SearchParamRecord } from "@/lib/filters";
+import { BUSINESS_UNIT_LABELS } from "@/lib/constants";
+import { formatBRL, formatPercentage } from "@/lib/utils/formatters";
+import { Database, ShieldCheck } from "lucide-react";
 
 export const metadata = {
   title: "Visão Geral — Copart BI Dashboard",
 };
 
-export default async function OverviewPage() {
-  const [kpis, goals, weeklyData, trafficSources] = await Promise.all([
-    dataService.getOverviewKPIs({ dateRange: { start: "2026-06-28", end: "2026-07-04" }, channel: "ALL", campaignType: "ALL", geo: "ALL", period: "weekly" }),
-    dataService.getGoalProgress({ dateRange: { start: "2026-06-01", end: "2026-06-30" }, channel: "ALL", campaignType: "ALL", geo: "ALL", period: "monthly" }),
-    dataService.getWeeklyRegistrations({ dateRange: { start: "2026-06-01", end: "2026-07-04" }, channel: "ALL", campaignType: "ALL", geo: "ALL", period: "weekly" }),
-    dataService.getTrafficSources(),
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParamRecord>;
+}) {
+  const filters = await filtersFromSearchParams(searchParams);
+  const [kpis, goals, weeklyData, trafficSources, mix, efficiency] = await Promise.all([
+    dataService.getOverviewKPIs(filters),
+    dataService.getGoalProgress(filters),
+    dataService.getWeeklyRegistrations(filters),
+    dataService.getTrafficSources(filters),
+    dataService.getTrafficMix(filters),
+    dataService.getMediaEfficiency(filters),
   ]);
 
+  const owned = mix.filter((bucket) => bucket.id === "direct" || bucket.id === "organic");
+  const paid = mix.find((bucket) => bucket.id === "paid");
+  const ownedShare = owned.reduce((sum, bucket) => sum + bucket.shareSessions, 0);
+  const paidShare = paid?.shareSessions ?? 0;
+  const spendByUnit = efficiency.reduce<Record<string, number>>((acc, row) => {
+    acc[row.unit] = (acc[row.unit] ?? 0) + row.spend;
+    return acc;
+  }, {});
+  const unitKeys = Object.keys(spendByUnit) as Array<keyof typeof BUSINESS_UNIT_LABELS>;
+  const spendLabel =
+    unitKeys.length === 1
+      ? formatBRL(spendByUnit[unitKeys[0]])
+      : unitKeys.map((unit) => `${BUSINESS_UNIT_LABELS[unit]} ${formatBRL(spendByUnit[unit])}`).join(" · ");
+
   const kpiList = [
-    { key: "pageViews", data: kpis.pageViews, insights: ["Total de visualizações de página no período", "Queda de 8% puxada pelo menor tráfego direto"] },
-    { key: "visitantesUnicos", data: kpis.visitantesUnicos, insights: ["Usuários únicos que acessaram o site", "70% do tráfego vindo de dispositivos móveis", "Retenção estável"] },
-    { key: "novosUsuarios", data: kpis.novosUsuarios, insights: ["Usuários que acessaram o site pela primeira vez", "Queda reflete menor investimento em Meta Ads na semana"] },
-    { key: "usuariosRetornantes", data: kpis.usuariosRetornantes, insights: ["Retenção: usuários que retornaram", "Crescimento de 7% indica boa performance de e-mail marketing"] },
-    { key: "firstVisit", data: kpis.firstVisit, insights: ["Topo do funil: volume de primeiras visitas", "Forte correlação com Campanhas de Venda Direta"] },
-    { key: "logins", data: kpis.logins, insights: ["Usuários que efetuaram login", "Queda de 5% alerta para possíveis problemas no fluxo de login"] },
-    { key: "favoritados", data: kpis.favoritados, insights: ["Ações de favoritar lotes/veículos", "Métrica de alta intenção manteve-se resiliente"] },
-    { key: "registrationStart", data: kpis.registrationStart, insights: ["Usuários que iniciaram o cadastro (registration_start)", "Leve aumento indica que o formulário está mais atrativo"] },
+    { key: "pageViews", data: kpis.pageViews, insights: ["Visualizações de página no recorte filtrado"] },
+    { key: "visitantesUnicos", data: kpis.visitantesUnicos, insights: ["Usuários únicos no recorte"] },
+    { key: "novosUsuarios", data: kpis.novosUsuarios, insights: ["Primeiro acesso no recorte"] },
+    { key: "usuariosRetornantes", data: kpis.usuariosRetornantes, insights: ["Retenção no recorte"] },
+    { key: "firstVisit", data: kpis.firstVisit, insights: ["Diagnóstico de site — não é etapa do Funil Leilão"] },
+    { key: "logins", data: kpis.logins, insights: ["Usuários que efetuaram login"] },
+    { key: "favoritados", data: kpis.favoritados, insights: ["Favoritar lotes — intenção de site"] },
+    { key: "registrationStart", data: kpis.registrationStart, insights: ["Início de cadastro (GA4). Distinto de Entrante e fora do Funil Leilão."] },
   ];
 
   const doughnutLabels = trafficSources.map((t) => t.source);
   const doughnutData = trafficSources.map((t) => t.junho);
-  const doughnutColors = [
-    "#0b1f3a", "#00b8cf", "#00a85a", "#153a73",
-    "#8c5be8", "#c77a00", "#cf3044", "#14c79a",
-  ];
-
+  const doughnutColors = ["#0b1f3a", "#00b8cf", "#00a85a", "#153a73", "#8c5be8", "#c77a00", "#cf3044", "#14c79a"];
+  const mixColors = ["#8c5be8", "#00a85a", "#cf3044", "#6c7685"];
   const barLabels = weeklyData.map((w) => w.week.split("–")[0]);
-  const insightsCards = [
-    {
-      icon: "🔴",
-      type: "alert",
-      title: "Aquisição é o gargalo imediato",
-      body: "Visitantes únicos e novos usuários recuaram mais do que logins e favoritados. A queda é mais severa na entrada de novos públicos.",
-      border: "#cf3044",
-    },
-    {
-      icon: "🟢",
-      type: "opp",
-      title: "Habilitação ainda tem eficiência",
-      body: "Junho entregou 9.709 habilitados (88,3% da meta), mesmo com entrantes em 77,5% da meta. O funil habilita bem o que chega.",
-      border: "#00a85a",
-    },
-    {
-      icon: "🟡",
-      type: "watch",
-      title: "Dados estão atrapalhando decisão",
-      body: "Landing pages e pop-ups com zero leads, UTMs fragmentadas e conversões inconsistentes indicam problemas de mensuração.",
-      border: "#c77a00",
-    },
-  ];
+  const period = formatDateRangeLabel(filters.dateRange.start, filters.dateRange.end);
 
   return (
     <>
       <PageHeader
         title="Visão Geral"
-        subtitle="Performance executiva da semana 28/06 – 04/07/2026"
+        subtitle={`Performance executiva — ${period}`}
         badge="Executivo"
         badgeColor="#153a73"
       />
       <PageContent>
-        {/* KPI Grid */}
-        <SectionTitle>Métricas da Semana</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 stagger-children">
+        <CardWrapper className="mb-8 bg-[#0b1f3a] text-white border-0">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-[#00b8cf] mb-2">Quem traz o volume</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <p className="text-xs text-[#8aa4be] font-semibold">Direct + orgânico (sessões)</p>
+              <p className="text-3xl font-black">{formatPercentage(ownedShare)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#8aa4be] font-semibold">Mídia paga (sessões)</p>
+              <p className="text-3xl font-black">{formatPercentage(paidShare)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#8aa4be] font-semibold">Gasto de mídia (unidade filtrada)</p>
+              <p className="text-lg font-black leading-snug">{spendLabel || "—"}</p>
+            </div>
+          </div>
+          <p className="text-sm text-[#d9eaf5] leading-relaxed">
+            Direct e orgânico carregam a maior parte do tráfego. O investimento está 100% na fatia paga, que é minoria de sessões e de novos usuários. A meta de Leilão pressiona a mídia, mas o volume de cadastro alocado pelo first-touch está em Direto. Spend de Leilão e Select não se somam neste card.
+          </p>
+        </CardWrapper>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
+          <CardWrapper title="Mix agregado — sessões GA4" subtitle="Direct, orgânico, pago e outros" className="lg:col-span-2">
+            <DoughnutChart
+              labels={mix.map((bucket) => bucket.label)}
+              data={mix.map((bucket) => bucket.sessions)}
+              colors={mixColors}
+              centerValue={formatPercentage(ownedShare, 0)}
+              centerLabel="owned"
+              height={240}
+            />
+          </CardWrapper>
+          <CardWrapper title="Detalhe por canal GA4" subtitle="Sessões — não é atribuição de campanha" className="lg:col-span-3">
+            <DoughnutChart labels={doughnutLabels} data={doughnutData} colors={doughnutColors} height={240} />
+          </CardWrapper>
+        </div>
+
+        <SectionTitle>Métricas do recorte</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger-children">
           {kpiList.map(({ key, data, insights }) => (
             <KpiCard
               key={key}
@@ -86,9 +124,8 @@ export default async function OverviewPage() {
           ))}
         </div>
 
-        {/* Goals */}
-        <SectionTitle>Progresso vs Metas Mensais (Junho)</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <SectionTitle>Progresso vs metas por unidade</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           {goals.map((g) => (
             <GoalCard
               key={g.title}
@@ -99,53 +136,39 @@ export default async function OverviewPage() {
               delta={g.delta}
               deltaLabel={g.deltaLabel}
               deltaType={g.deltaType}
-              color={g.title === "Entrantes" ? "#153a73" : "#00b8cf"}
+              color={g.title.includes("Select/Compra") ? "#00b8cf" : g.title.includes("Select") ? "#00a85a" : "#153a73"}
             />
           ))}
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-5 gap-4 mb-8">
-          {/* Doughnut */}
-          <CardWrapper title="Origem de Tráfego — Junho" className="col-span-2">
-            <DoughnutChart
-              labels={doughnutLabels}
-              data={doughnutData}
-              colors={doughnutColors}
-              height={240}
-            />
-          </CardWrapper>
+        <CardWrapper title="Entrantes vs Habilitados — Leilão/Compra" className="mb-8">
+          <BarChart
+            labels={barLabels}
+            datasets={[
+              { label: "Entrantes", data: weeklyData.map((w) => w.entrantes), color: "#00a85a" },
+              { label: "Habilitados", data: weeklyData.map((w) => w.habilitados), color: "#00b8cf" },
+            ]}
+            valueFormatter="number"
+            height={240}
+          />
+        </CardWrapper>
 
-          {/* Stacked bar — weekly */}
-          <CardWrapper title="Entrantes vs Habilitados por Semana" className="col-span-3">
-            <BarChart
-              labels={barLabels}
-              datasets={[
-                { label: "Entrantes", data: weeklyData.map((w) => w.entrantes), color: "#00a85a" },
-                { label: "Habilitados", data: weeklyData.map((w) => w.habilitados), color: "#00b8cf" },
-              ]}
-              valueFormatter="number"
-              height={240}
-            />
-          </CardWrapper>
-        </div>
-
-        {/* Insights */}
-        <SectionTitle>Insights da Semana</SectionTitle>
-        <div className="grid grid-cols-3 gap-4">
-          {insightsCards.map((insight) => (
-            <div
-              key={insight.title}
-              className="rounded-2xl p-5 bg-[#f8fbff] border border-[#dfe6ee] border-l-4"
-              style={{ borderLeftColor: insight.border }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">{insight.icon}</span>
-                <strong className="text-sm font-black text-[#0b1f3a]">{insight.title}</strong>
-              </div>
-              <p className="text-sm text-[#344255] leading-relaxed">{insight.body}</p>
+        <div className="mt-8 p-5 rounded-2xl bg-[#0b1f3a] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#00b8cf]/20 flex items-center justify-center text-[#00b8cf]">
+              <Database className="w-5 h-5" />
             </div>
-          ))}
+            <div>
+              <span className="font-black text-sm">Governança e origem</span>
+              <p className="text-xs text-[#d9eaf5] mt-0.5">
+                Google Ads, Meta Ads, GA4 e Copart ERP a partir dos CSVs em raw/. Recorte: Meta + GA4 ago/2026 · Copart set/2026. Não é BigQuery ao vivo.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#8aa4be]">
+            <ShieldCheck className="w-4 h-4 text-[#00b8cf]" />
+            <span>SLA 99,8% • Carga 11h BRT</span>
+          </div>
         </div>
       </PageContent>
     </>

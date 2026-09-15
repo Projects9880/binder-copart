@@ -3,14 +3,9 @@
 // Abstract layer: swap MockDataService for BigQueryDataService
 // ============================================================================
 
-import { MockDataService } from './mock-data';
-import type { DataService } from './types';
+import { RawExportDataService } from "./raw-data";
+import type { DataService } from "./types";
 
-// ┌──────────────────────────────────────────────────────────────────┐
-// │  TO CONNECT TO BIGQUERY:                                         │
-// │  1. Create BigQueryDataService implementing DataService          │
-// │  2. Change the line below to: new BigQueryDataService()          │
-// │  3. All UI components will automatically use live data           │
-// └──────────────────────────────────────────────────────────────────┘
+// Extrações em raw/ (Meta, Google Ads, GA4, Copart). BigQuery substitui esta camada depois.
 
-export const dataService: DataService = new MockDataService();
+export const dataService: DataService = new RawExportDataService();

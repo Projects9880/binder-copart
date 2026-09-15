@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -52,6 +53,10 @@ export function LineChart({
   valueFormatter,
   height = 260,
 }: LineChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div style={{ height }} className="rounded-xl bg-[#f4f7fb]" />;
+
   const data = {
     labels,
     datasets: datasets.map((ds) => ({
@@ -114,6 +119,9 @@ export function LineChart({
         },
       },
       y: {
+        beginAtZero: true,
+        min: 0,
+        grace: 0,
         grid: { color: "#dfe6ee", lineWidth: 1 },
         border: { display: false, dash: [4, 4] },
         ticks: {

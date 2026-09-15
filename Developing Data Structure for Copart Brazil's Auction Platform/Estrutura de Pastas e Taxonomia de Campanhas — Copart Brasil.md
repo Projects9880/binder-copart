@@ -202,35 +202,29 @@ COPART BRASIL
 │       └── SOCIAL (Tipo de Campanha)
 │           └── ORGANIC_LEILAO_BR_SOCIAL_CONTENT
 │
-└── VENDA_DIRETA (Unidade de Negócio)
-    ├── AWARENESS (Estágio do Funil)
+└── COPART_SELECT (Unidade de Negócio)
+    ├── TRAZER_PARA_VENDER (Funil 1 — Captação)
     │   ├── BRAND (Tipo de Campanha)
-    │   │   └── META_VENDA_BR_BRAND_VIDEO_CPC
-    │   │
-    │   └── GENERIC (Tipo de Campanha)
-    │       └── GOOGLE_VENDA_BR_GENERIC_STATIC_CPM
-    │
-    ├── CONSIDERATION (Estágio do Funil)
+    │   │   └── META_SELECT_VENDER_BR_BRAND_VIDEO_CPC
     │   └── LOOKALIKE (Tipo de Campanha)
-    │       └── META_VENDA_BR_LAL_VIDEO_CPC
+    │       └── META_SELECT_VENDER_BR_LAL_VIDEO_CPC
     │
-    ├── CONVERSION (Estágio do Funil)
-    │   └── REMARKETING (Tipo de Campanha)
-    │       └── META_VENDA_BR_RMKT_STATIC_CPA
-    │
-    └── DIRECT (Canal)
-        └── WHATSAPP (Tipo de Campanha)
-            └── WHATSAPP_VENDA_BR_DIRECT_CPC
+    └── VENHA_COMPRAR (Funil 2 — Venda de Estoque)
+        ├── CATALOG (Tipo de Campanha)
+        │   └── META_SELECT_COMPRAR_BR_CATALOG_CPA
+        └── SEARCH / PMAX (Tipo de Campanha)
+            └── GOOGLE_SELECT_COMPRAR_BR_PMAX_CPC
 ```
 
 ### 2.2 Fórmula de Nomeação Tática
 
-**Estrutura**: `[CHANNEL]_[UNIT]_[GEO]_[AUDIENCE]_[FORMAT]_[BUY_MODEL]`
+**Estrutura**: `[CHANNEL]_[UNIT]_[FUNNEL]_[GEO]_[AUDIENCE]_[FORMAT]_[BUY_MODEL]`
 
 | **Componente** | **Variáveis** | **Exemplo** | **Notas** |
 |---|---|---|---|
 | **CHANNEL** | META, GOOGLE, TIKTOK, ORGANIC, WHATSAPP, DIRECT | META | Plataforma de mídia ou canal |
-| **UNIT** | LEILAO, VENDA | LEILAO | Unidade de negócio |
+| **UNIT** | LEILAO, SELECT | SELECT | Unidade de negócio |
+| **FUNNEL** | VENDER, COMPRAR | VENDER | Funil 1 (Captação) ou Funil 2 (Venda Estoque) |
 | **GEO** | BR, SP, RJ, MG, RS, etc. | BR | Geografia (Brasil ou estado) |
 | **AUDIENCE** | BRAND, INT, LAL, RMKT, CUSTOM, GENERIC | LAL | Tipo de audiência |
 | **FORMAT** | VIDEO, STATIC, CAROUSEL, COLLECTION, TEXT | VIDEO | Formato do criativo |
@@ -238,27 +232,17 @@ COPART BRASIL
 
 **Exemplos completos**:
 - `META_LEILAO_BR_LAL_VIDEO_CPC` → Meta, Leilão, Brasil, Look-alike, Vídeo, CPC
-- `GOOGLE_LEILAO_SP_INT_STATIC_CPM` → Google, Leilão, São Paulo, Interesse, Estático, CPM
-- `META_VENDA_BR_RMKT_CAROUSEL_CPA` → Meta, Venda/Compra Direta, Brasil, Remarketing, Carrossel, CPA
-- `WHATSAPP_VENDA_BR_DIRECT_CPC` → WhatsApp, Venda/Compra Direta, Brasil, Direto, CPC
+- `META_SELECT_VENDER_BR_LAL_VIDEO_CPC` → Meta, Copart Select (Trazer p/ Vender), Brasil, Look-alike, Vídeo, CPC
+- `GOOGLE_SELECT_COMPRAR_BR_PMAX_CPC` → Google, Copart Select (Venha Comprar), Brasil, Performance Max, CPC
 
 ### 2.3 Variáveis Detalhadas
 
-#### CHANNEL (Canal de Mídia)
-| **Código** | **Descrição** | **Plataforma** |
-|---|---|---|
-| META | Meta Ads (Facebook + Instagram) | Facebook Ads Manager |
-| GOOGLE | Google Ads (Search + Display) | Google Ads |
-| TIKTOK | TikTok Ads | TikTok Ads Manager |
-| ORGANIC | Tráfego Orgânico (SEO + Social) | GA4 |
-| WHATSAPP | WhatsApp Business | WhatsApp API |
-| DIRECT | Tráfego Direto | GA4 |
-
-#### UNIT (Unidade de Negócio)
+#### UNIT & FUNNEL (Unidades de Negócio & Funis)
 | **Código** | **Descrição** | **Meta Mensal** |
 |---|---|---|
-| LEILAO | Leilão de Veículos | 22k entrantes / 11k habilitados |
-| VENDA | Venda/Compra Direta | 700-800 conversas/semana |
+| LEILAO | Leilão de Veículos (Core) | 22k entrantes / 11k habilitados |
+| SELECT_VENDER | Copart Select — Trazer para Vender | 700 conversas / 250 avaliações/semana |
+| SELECT_COMPRAR | Copart Select — Venha Comprar | 500 propostas / 120 vendas/semana |
 
 #### GEO (Geografia)
 | **Código** | **Região** | **Prioridade** |

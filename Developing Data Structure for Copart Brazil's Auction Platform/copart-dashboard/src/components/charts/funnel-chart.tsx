@@ -12,7 +12,11 @@ export function FunnelChart({
   primaryColor = "#00b8cf",
   className,
 }: FunnelChartProps) {
-  const max = stages[0].value;
+  if (!stages || stages.length === 0) {
+    return null;
+  }
+
+  const max = stages[0]?.value > 0 ? stages[0].value : 1;
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -21,7 +25,7 @@ export function FunnelChart({
         const isLast = i === stages.length - 1;
 
         return (
-          <div key={stage.label} className="relative">
+          <div key={`${stage.label}-${i}`} className="relative">
             {/* Bar */}
             <div
               className="flex items-center gap-3 mx-auto transition-all duration-700"

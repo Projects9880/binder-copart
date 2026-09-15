@@ -21,12 +21,13 @@ A Copart Brasil requer **dois dashboards complementares** que servem a públicos
 
 ### 2.1 Propósito
 
-O dashboard executivo fornece uma **visão consolidada do desempenho** das duas unidades de negócio (Leilão e Venda/Compra Direta), permitindo que líderes entendam rapidamente:
+O dashboard executivo fornece uma **visão consolidada do desempenho** das unidades de negócio (Leilão Core e Copart Select), permitindo que líderes entendam rapidamente:
 
 - Progresso em relação às metas mensais
-- Qualidade do tráfego (entrantes vs. habilitados)
-- Eficiência de gasto em mídia
-- Principais gargalos do funil
+- Qualidade do tráfego e taxa de habilitação (Leilão)
+- Captação de estoque vs Vendas de veículos (Copart Select)
+- Eficiência de gasto em mídia por funil
+- Principais gargalos operacionais e conversão
 
 ### 2.2 Estrutura de Abas
 
@@ -42,9 +43,9 @@ O dashboard executivo fornece uma **visão consolidada do desempenho** das duas 
 │      22.450              11.230              50.0%          │
 │     ↑ 12% vs mês ant.   ↑ 8% vs mês ant.   ↓ 2% vs mês ant. │
 │                                                              │
-│  Custo/Entrante     Custo/Habilitado     Gasto Total (R$)   │
-│      R$ 8.50            R$ 17.00            R$ 190.500      │
-│     ↓ 5% vs mês ant.   ↑ 3% vs mês ant.   ↑ 15% vs mês ant. │
+│  Veículos Captados   Veículos Vendidos    Custo/Venda (R$)   │
+│       357 (Select)        248 (Select)        R$ 122,00      │
+│     ↑ 14% vs mês ant.   ↑ 18% vs mês ant.   ↓ 4% vs mês ant. │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,9 +58,13 @@ O dashboard executivo fornece uma **visão consolidada do desempenho** das duas 
 │  Meta: 22k | Realizado: 22.4k  Meta: 11k | Realizado: 11.2k │
 │  ████████████░░░ 102%         ████████░░░░░░░░░ 102%        │
 │                                                               │
-│  Venda/Compra Direta — Conversas WhatsApp                    │
+│  Copart Select — Funil 1: Trazer para Vender (Conversas)     │
 │  Meta: 3.2k/mês | Realizado: 3.1k                           │
 │  ████████░░░░░░░░░░░░░░░░░░░ 97%                            │
+│                                                               │
+│  Copart Select — Funil 2: Venha Comprar (Vendas de Estoque)  │
+│  Meta: 300/mês | Realizado: 248                             │
+│  ██████████░░░░░░░░░░░░░░░░░ 82,6%                          │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```

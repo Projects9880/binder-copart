@@ -3,70 +3,63 @@ import { CampaignTable } from "@/components/tables/campaign-table";
 import { LineChart } from "@/components/charts/line-chart";
 import { DoughnutChart } from "@/components/charts/doughnut-chart";
 import { dataService } from "@/lib/data/data-service";
-import { COLORS } from "@/lib/constants";
+import { CHANNEL_LABELS, COLORS } from "@/lib/constants";
+import { filtersFromSearchParams } from "@/lib/page-filters";
+import type { SearchParamRecord } from "@/lib/filters";
+import { formatBRL } from "@/lib/utils/formatters";
 
 export const metadata = { title: "Campanhas de Leilão — Copart BI" };
 
-const defaultFilters = {
-  dateRange: { start: "2026-06-28", end: "2026-07-04" },
-  channel: "ALL" as const,
-  campaignType: "leilao" as const,
-  geo: "ALL",
-  period: "weekly" as const,
-};
-
-export default async function AuctionCampaignsPage() {
-  const [scorecards, trendMeta, trendGoogle, trendOrganic] = await Promise.all([
-    dataService.getCampaignScorecards(defaultFilters),
-    dataService.getTrendData("taxa_habilitacao", 7, defaultFilters),
-    dataService.getTrendData("taxa_habilitacao", 7, defaultFilters),
-    dataService.getTrendData("taxa_habilitacao", 7, defaultFilters),
+export default async function AuctionCampaignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParamRecord>;
+}) {
+  const filters = await filtersFromSearchParams(searchParams);
+  const leilaoFilters = { ...filters, campaignType: "leilao_compra" as const };
+  const [scorecards, trend] = await Promise.all([
+    dataService.getCampaignScorecards(leilaoFilters),
+    dataService.getTrendData("entrantes", 31, leilaoFilters),
   ]);
-
-  const leilaoCampaigns = scorecards.filter(
-    (c) => c.campaign_name.includes("LEILAO") || c.campaign_name.includes("ORGANIC")
-  );
-  const labels = trendMeta.map((_, i) => `D${i + 1}`);
-  const spendData = leilaoCampaigns.filter((c) => c.spend > 0);
+  const spendData = scorecards.filter((c) => c.spend > 0);
   const totalSpend = spendData.reduce((a, c) => a + c.spend, 0);
+  const spendByChannel = spendData.reduce<Record<string, number>>((acc, row) => {
+    const label = CHANNEL_LABELS[row.channel] ?? row.channel;
+    acc[label] = (acc[label] ?? 0) + row.spend;
+    return acc;
+  }, {});
+  const spendLabels = Object.keys(spendByChannel);
+  const spendValues = Object.values(spendByChannel);
 
   return (
     <>
       <PageHeader
-        title="Campanhas de Leilão"
-        subtitle="Performance detalhada dos últimos 7 dias"
+        title="Campanhas Leilão/Compra"
+        subtitle="Investimento isolado do Select — owner de mídia: Felipe"
         badge="Operacional"
         badgeColor="#00a85a"
       />
       <PageContent>
-        {/* Table */}
-        <SectionTitle>Tabela Detalhada — Últimos 7 Dias</SectionTitle>
-        <div className="mb-8">
-          <CampaignTable data={leilaoCampaigns} />
+        <SectionTitle>Tabela detalhada</SectionTitle>
+        <div className="mb-8 overflow-x-auto">
+          <CampaignTable data={scorecards} />
         </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-3 gap-4">
-          <CardWrapper title="Tendência — Taxa de Habilitação" className="col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <CardWrapper title="Cadastros estimados por dia (GA4)" className="lg:col-span-2">
             <LineChart
-              labels={labels}
-              datasets={[
-                { label: "META_LEILAO", data: trendMeta.map((d) => d.value + 2), color: "#1877f2" },
-                { label: "GOOGLE_LEILAO", data: trendGoogle.map((d) => d.value - 2), color: "#4285f4" },
-                { label: "ORGANIC", data: trendOrganic.map((d) => d.value - 1), color: COLORS.green },
-              ]}
-              valueFormatter="percent"
+              labels={trend.map((d) => `${d.date.slice(8)}/${d.date.slice(5, 7)}`)}
+              datasets={[{ label: "Cadastro (GA4)", data: trend.map((d) => d.value), color: COLORS.teal }]}
+              valueFormatter="number"
               height={240}
             />
           </CardWrapper>
-
-          <CardWrapper title="Distribuição de Gasto">
+          <CardWrapper title="Distribuição de gasto — só Leilão/Compra">
             <DoughnutChart
-              labels={spendData.map((c) => c.campaign_name.split("_").slice(0, 2).join("_"))}
-              data={spendData.map((c) => c.spend)}
+              labels={spendLabels}
+              data={spendValues}
               colors={[COLORS.teal, COLORS.blue, COLORS.violet]}
-              centerValue={`R$ ${(totalSpend / 1000).toFixed(0)}k`}
-              centerLabel="Gasto Total"
+              centerValue={formatBRL(totalSpend)}
+              centerLabel="Gasto Leilão"
               height={240}
             />
           </CardWrapper>

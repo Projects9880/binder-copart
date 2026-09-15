@@ -143,3 +143,7 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #dfe6ee; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #c0c9d4; }
+
+@media print {
+  aside { display: none !important; }
+}

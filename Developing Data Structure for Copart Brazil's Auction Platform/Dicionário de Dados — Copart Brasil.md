@@ -199,8 +199,10 @@
 - `DIRECT` — Tráfego direto
 
 **`campaign_type`**:
-- `leilao` — Campanha de Leilão
-- `venda_direta` — Campanha de Venda/Compra Direta
+- `leilao` — Campanha de Leilão (Core)
+- `venda_direta` — Copart Select (legado)
+- `copart_select_vender` — Copart Select: Funil 1 (Trazer para Vender / Captação)
+- `copart_select_comprar` — Copart Select: Funil 2 (Venha Comprar / Venda de Estoque)
 
 **`device_category`**:
 - `desktop` — Computador

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -31,12 +32,16 @@ export function DoughnutChart({
   height = 260,
   legendPosition = "right",
 }: DoughnutChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div style={{ height }} className="rounded-xl bg-[#f4f7fb]" />;
+
   const chartData = {
     labels,
     datasets: [
       {
         data,
-        backgroundColor: colors.map((c) => c + "dd"),
+        backgroundColor: colors.map((c) => (c.startsWith("#") && c.length === 7 ? c + "dd" : c)),
         hoverBackgroundColor: colors,
         borderColor: "#fff",
         borderWidth: 3,
@@ -65,7 +70,7 @@ export function DoughnutChart({
         callbacks: {
           label: (ctx: any) => {
             const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const pct = ((ctx.parsed / total) * 100).toFixed(1);
+            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : "0.0";
             return ` ${ctx.label}: ${ctx.parsed.toLocaleString("pt-BR")} (${pct}%)`;
           },
         },
@@ -104,7 +109,7 @@ export function DoughnutChart({
         {labels.map((label, i) => {
            const pct = total > 0 ? ((data[i] / total) * 100).toFixed(0) : 0;
            return (
-             <div key={label} className="flex items-center gap-2 text-[11px] font-semibold text-[#344255]">
+             <div key={`${label}-${i}`} className="flex items-center gap-2 text-[11px] font-semibold text-[#344255]">
                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: colors[i] }} />
                <span className="truncate">{label} — {pct}%</span>
              </div>
