@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { FunnelStage } from "@/lib/data/types";
+import { InfoTip } from "@/components/layout/info-tip";
 
 interface FunnelChartProps {
   stages: FunnelStage[];
@@ -32,25 +33,21 @@ export function FunnelChart({
               style={{ width: `${Math.max(widthPct, 30)}%` }}
             >
               <div
-                className="flex-1 rounded-xl px-4 py-3 flex items-center justify-between min-h-[52px]"
+                className="flex-1 rounded-xl px-4 py-3 flex items-center min-h-[52px]"
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor}22, ${primaryColor}11)`,
                   border: `1.5px solid ${primaryColor}44`,
                 }}
               >
                 <div>
-                  <span className="text-[11px] uppercase tracking-widest font-bold text-[#6c7685] block">
+                  <span className="text-[11px] uppercase tracking-widest font-bold text-[#6c7685] inline-flex items-center">
                     {stage.label}
+                    {stage.description ? <InfoTip text={stage.description} side="right" /> : null}
                   </span>
-                  <span className="text-xl font-black text-[#0b1f3a]">
+                  <span className="text-xl font-black text-[#0b1f3a] block">
                     {stage.value.toLocaleString("pt-BR")}
                   </span>
                 </div>
-                {stage.description && (
-                  <span className="text-xs text-[#6c7685] text-right max-w-[140px] leading-snug">
-                    {stage.description}
-                  </span>
-                )}
               </div>
             </div>
 

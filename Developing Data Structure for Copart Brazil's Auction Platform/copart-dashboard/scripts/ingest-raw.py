@@ -96,13 +96,13 @@ def br_number(value: str | None) -> float:
     s = str(value).strip().replace("%", "")
     if s in {"", "--", "—", "-"}:
         return 0.0
-    if "," in s and "." in s:
+    if "," in s:
         s = s.replace(".", "").replace(",", ".")
-    elif "," in s:
-        s = s.replace(",", ".")
+    elif s.count(".") > 1:
+        s = s.replace(".", "")
     elif s.count(".") == 1:
         left, right = s.split(".")
-        if len(right) == 3 and left.isdigit():
+        if len(right) == 3 and left.lstrip("-").isdigit():
             s = left + right
     try:
         return float(s)
@@ -196,6 +196,115 @@ def parse_google() -> list[dict]:
             }
         )
     return campaigns
+
+
+def classify_google_campaign(name: str) -> str:
+    folded = strip_accents(name).upper()
+    parts = [part.strip() for part in folded.split("|")]
+    if any("LEILAO" in part for part in parts):
+        return "leilao_compra"
+    for part in parts:
+        if part == "COMPRA E VENDA":
+            return "select_mix"
+        if part == "VENDA":
+            return "select_venda"
+        if part == "COMPRA":
+            return "select_compra"
+    return classify_unit(name)
+
+
+def parse_google_quarterly() -> dict | None:
+    try:
+        path = find_raw("comparacao", "trimestral")
+    except FileNotFoundError:
+        return None
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    reader = csv.DictReader(lines[2:])
+    campaigns: list[dict] = []
+    by_type: dict[str, dict] = {}
+    totals = None
+
+    def metrics(row: dict) -> dict:
+        return {
+            "spend": round(br_number(row.get("Custo")), 2),
+            "spendPrev": round(br_number(row.get("Custo (comparativo)")), 2),
+            "conversions": round(br_number(row.get("Conversões")), 2),
+            "conversionsPrev": round(br_number(row.get("Conversões (comparativo)")), 2),
+            "clicks": int(br_number(row.get("Cliques"))),
+            "clicksPrev": int(br_number(row.get("Cliques (comparativo)"))),
+            "impressions": int(br_number(row.get("Impr."))),
+            "impressionsPrev": int(br_number(row.get("Impr. (comparativo)"))),
+        }
+
+    for row in reader:
+        status = (row.get("Status da campanha") or "").strip()
+        name = (row.get("Campanha") or "").strip()
+        campaign_type = (row.get("Tipo de campanha") or "").strip()
+        label = status if status.startswith("Total:") else name
+        if label.startswith("Total:"):
+            rec = {"label": label.replace("Total:", "").strip() or campaign_type, "campaignType": campaign_type, **metrics(row)}
+            if "Conta" in label or "Campanhas" in label:
+                totals = rec
+            elif rec["label"] and rec["label"] not in {"Padrão", "--"}:
+                by_type[rec["label"]] = rec
+            continue
+        rec = metrics(row)
+        if (
+            rec["spend"] <= 0
+            and rec["spendPrev"] <= 0
+            and rec["conversions"] <= 0
+            and rec["conversionsPrev"] <= 0
+            and rec["clicks"] <= 0
+            and rec["clicksPrev"] <= 0
+        ):
+            continue
+        campaigns.append(
+            {
+                "name": name,
+                "status": status,
+                "campaignType": campaign_type,
+                "unit": classify_google_campaign(name),
+                **rec,
+            }
+        )
+    campaigns.sort(key=lambda row: row["spend"], reverse=True)
+    if totals is None:
+        totals = {
+            "spend": round(sum(row["spend"] for row in campaigns), 2),
+            "spendPrev": round(sum(row["spendPrev"] for row in campaigns), 2),
+            "conversions": round(sum(row["conversions"] for row in campaigns), 2),
+            "conversionsPrev": round(sum(row["conversionsPrev"] for row in campaigns), 2),
+            "clicks": sum(row["clicks"] for row in campaigns),
+            "clicksPrev": sum(row["clicksPrev"] for row in campaigns),
+            "impressions": sum(row["impressions"] for row in campaigns),
+            "impressionsPrev": sum(row["impressionsPrev"] for row in campaigns),
+        }
+    return {
+        "sourceFile": path.name,
+        "start": "2026-06-15",
+        "end": "2026-09-15",
+        "compareStart": "2026-03-14",
+        "compareEnd": "2026-06-14",
+        "days": 93,
+        "compareDays": 93,
+        "totals": {
+            "spend": {"current": totals["spend"], "previous": totals["spendPrev"]},
+            "conversions": {"current": totals["conversions"], "previous": totals["conversionsPrev"]},
+            "clicks": {"current": totals["clicks"], "previous": totals["clicksPrev"]},
+            "impressions": {"current": totals["impressions"], "previous": totals["impressionsPrev"]},
+        },
+        "byType": [
+            {
+                "label": row["label"],
+                "spend": {"current": row["spend"], "previous": row["spendPrev"]},
+                "conversions": {"current": row["conversions"], "previous": row["conversionsPrev"]},
+                "clicks": {"current": row["clicks"], "previous": row["clicksPrev"]},
+            }
+            for row in sorted(by_type.values(), key=lambda item: item["spend"], reverse=True)
+            if row["spend"] > 0 or row["spendPrev"] > 0
+        ],
+        "campaigns": campaigns,
+    }
 
 
 def parse_copart() -> list[dict]:
@@ -337,6 +446,77 @@ def parse_google_ads() -> list[dict]:
     return ads
 
 
+def parse_ga4_paid_download() -> dict | None:
+    path = RAW / "download.csv"
+    if not path.exists():
+        return None
+    lines = [line.strip() for line in path.read_text(encoding="utf-8-sig").splitlines() if line.strip()]
+    rows: list[dict] = []
+    current_channel = ""
+    current_event = ""
+    current_val: int | None = None
+    previous_val: int | None = None
+    total_current = 0
+    total_previous = 0
+    started_events = False
+
+    def flush() -> None:
+        nonlocal current_val, previous_val
+        if current_channel and current_event and current_val is not None:
+            rows.append(
+                {
+                    "channel": current_channel,
+                    "event": current_event,
+                    "current": current_val,
+                    "previous": previous_val or 0,
+                }
+            )
+        current_val = None
+        previous_val = None
+
+    for line in lines:
+        if line.startswith("#") or line.startswith("Grupo principal"):
+            continue
+        parts = next(csv.reader([line]))
+        while len(parts) < 4:
+            parts.append("")
+        channel, event, label, value = (parts[0].strip(), parts[1].strip(), parts[2].strip(), parts[3].strip())
+        if channel and event:
+            flush()
+            started_events = True
+            current_channel, current_event = channel, event
+            current_val = None
+            previous_val = None
+            continue
+        if "15 de jun" in label.lower():
+            amount = int(br_number(value))
+            if started_events:
+                current_val = amount
+            else:
+                total_current = amount
+            continue
+        if "14 de mar" in label.lower():
+            amount = int(br_number(value))
+            if started_events:
+                previous_val = amount
+            else:
+                total_previous = amount
+    flush()
+
+    return {
+        "sourceFile": "download.csv",
+        "metric": "total_users",
+        "start": "2026-06-15",
+        "end": "2026-09-15",
+        "compareStart": "2026-03-14",
+        "compareEnd": "2026-06-14",
+        "days": 93,
+        "compareDays": 93,
+        "totalUsers": {"current": total_current, "previous": total_previous},
+        "rows": rows,
+    }
+
+
 def parse_ga4() -> dict:
     path = next(RAW.glob("Resumo*.csv"))
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -396,26 +576,155 @@ def parse_ga4() -> dict:
     }
 
 
+def iso_date(value) -> str | None:
+    from datetime import datetime, date
+
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, date):
+        return value.isoformat()
+    return None
+
+
+def parse_copart_xlsx() -> dict:
+    import pandas as pd
+
+    path = find_raw("Dashboard_Leiloes", "Entrantes")
+    daily_df = pd.read_excel(path, sheet_name="Entrantes e Habilitados", header=None)
+    daily: list[dict] = []
+    for _, row in daily_df.iterrows():
+        dated = iso_date(row[0])
+        if not dated:
+            continue
+        if pd.isna(row[1]) and pd.isna(row[2]):
+            continue
+        daily.append(
+            {
+                "date": dated,
+                "entrantes": int(row[1] or 0),
+                "habilitados": int(row[2] or 0),
+            }
+        )
+
+    week_ranges = [
+        {"week": "30/08–05/09", "start": "2026-08-30", "end": "2026-09-05"},
+        {"week": "06/09–12/09", "start": "2026-09-06", "end": "2026-09-12"},
+    ]
+    by_uf: list[dict] = []
+    week_index = -1
+    for _, row in daily_df.iterrows():
+        label = str(row[11] or "").strip()
+        if label == "Estado":
+            week_index += 1
+            continue
+        if week_index < 0 or week_index >= len(week_ranges):
+            continue
+        geo = label.upper().replace("TOTAL", "TOTAL").replace(" ", "")
+        if geo in {"", "NAN"}:
+            continue
+        if geo == "TOTAL":
+            continue
+        mapped = "OUTROS" if geo == "OUTROS" else "VAZIAS" if geo == "VAZIAS" else geo
+        if mapped not in {"SP", "RJ", "MG", "PR", "SC", "RS", "GO", "BA", "OUTROS", "VAZIAS"}:
+            continue
+        wr = week_ranges[week_index]
+        hab = row[16]
+        by_uf.append(
+            {
+                **wr,
+                "geo": mapped,
+                "entrantes": int(row[12] or 0) if pd.notna(row[12]) else 0,
+                "habilitados": int(hab or 0) if pd.notna(hab) else 0,
+            }
+        )
+
+    vd = pd.read_excel(path, sheet_name="Venda Direta", header=None)
+    select_weeks = [
+        {
+            "week": "30/08–05/09",
+            "start": "2026-08-30",
+            "end": "2026-09-05",
+            "leads": int(vd.iloc[4, 1] or 0),
+            "vendas": int(vd.iloc[5, 1] or 0),
+            "entradas": int(vd.iloc[6, 1] or 0),
+        },
+        {
+            "week": "06/09–12/09",
+            "start": "2026-09-06",
+            "end": "2026-09-12",
+            "leads": int(vd.iloc[4, 2] or 0),
+            "vendas": int(vd.iloc[5, 2] or 0),
+            "entradas": int(vd.iloc[6, 2] or 0),
+        },
+    ]
+
+    def day_to_date(day: int) -> str:
+        if day >= 30:
+            return f"2026-08-{day:02d}"
+        return f"2026-09-{day:02d}"
+
+    select_page_views: list[dict] = []
+    blocks = [
+        ("comprar", 17, 23, 0, 1),
+        ("comprar", 17, 23, 5, 6),
+        ("vender", 28, 34, 0, 1),
+        ("vender", 28, 34, 5, 6),
+    ]
+    for journey, r0, r1, day_col, val_col in blocks:
+        for r in range(r0, r1 + 1):
+            day = vd.iloc[r, day_col]
+            val = vd.iloc[r, val_col]
+            if pd.isna(day) or pd.isna(val):
+                continue
+            try:
+                d = int(day)
+            except (TypeError, ValueError):
+                continue
+            select_page_views.append(
+                {"date": day_to_date(d), "journey": journey, "pageViews": int(val)}
+            )
+
+    return {
+        "copartDaily": daily,
+        "copartByUf": by_uf,
+        "selectWeekly": select_weeks,
+        "selectPageViews": select_page_views,
+    }
+
+
 def main() -> None:
     campaigns = parse_meta() + parse_google()
     creatives = parse_meta_ads() + parse_google_ads()
+    excel = parse_copart_xlsx()
+    daily = excel["copartDaily"]
     snapshot = {
         "origin": "weekly_report",
-        "originLabel": "Meta + GA4 ago/2026 · Copart set/2026",
+        "originLabel": "Meta + GA4 ago/2026 · GA4/Google 15/06–15/09 · Copart set/2026",
         "mediaStart": "2026-08-01",
         "mediaEnd": "2026-08-31",
-        "copartStart": "2026-09-01",
-        "copartEnd": "2026-09-13",
+        "copartStart": daily[0]["date"] if daily else "2026-09-01",
+        "copartEnd": daily[-1]["date"] if daily else "2026-09-13",
         "files": [
             "Copart-Boleto-Campaigns-Aug-1-2026-Aug-31-2026.csv",
             "Copart-Boleto-Ads-Aug-1-2026-Aug-31-2026.csv",
             "Performance do grupo de anúncios.csv",
             "Relatório de anúncios.csv",
             "Resumo_dos_relatórios.csv",
+            "download.csv",
+            "Google_Comparação_trimestral.csv",
             "copart_resultados_mensais.csv",
+            "Dashboard_Leiloes_Vendas__Entrantes_e_Habilitados - Setembro.xlsx",
         ],
         "copartMonthly": parse_copart(),
+        "copartDaily": excel["copartDaily"],
+        "copartByUf": excel["copartByUf"],
+        "selectWeekly": excel["selectWeekly"],
+        "selectPageViews": excel["selectPageViews"],
         "ga4": parse_ga4(),
+        "ga4PaidKeyEvents": parse_ga4_paid_download(),
+        "googleQuarterly": parse_google_quarterly(),
         "campaigns": campaigns,
         "creatives": creatives,
     }

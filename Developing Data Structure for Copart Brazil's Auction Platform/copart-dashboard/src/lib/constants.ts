@@ -123,17 +123,11 @@ export const DEFAULT_DATE_RANGE = {
   end: "2026-08-31",
 } as const;
 
-export const DATA_ORIGIN_LABEL = "Meta + GA4 ago/2026 · Copart set/2026";
+export const DATA_ORIGIN_LABEL = "Meta + GA4 ago/2026 · GA4/Google 15/06–15/09 · Copart set/2026";
 
-export const GEO_OPTIONS = [
-  { id: "ALL", label: "Brasil" },
-  { id: "SP", label: "São Paulo" },
-  { id: "RJ", label: "Rio de Janeiro" },
-  { id: "MG", label: "Minas Gerais" },
-  { id: "PR", label: "Paraná" },
-  { id: "RS", label: "Rio Grande do Sul" },
-  { id: "BA", label: "Bahia" },
-] as const;
+import { BRAZIL_UFS } from "@/lib/data/ibge-population";
+
+export const GEO_OPTIONS = [{ id: "ALL", label: "Brasil" }, ...BRAZIL_UFS] as const;
 
 export const GEO_WEIGHTS: Record<string, number> = {
   ALL: 1,

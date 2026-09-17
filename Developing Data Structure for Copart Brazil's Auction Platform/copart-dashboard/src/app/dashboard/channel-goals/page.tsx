@@ -9,6 +9,7 @@ import { formatBRL, formatNumberFull, formatPercentage } from "@/lib/utils/forma
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { BusinessUnit, MediaEfficiencyRow } from "@/lib/data/types";
+import { InfoTip } from "@/components/layout/info-tip";
 
 export const metadata = { title: "Metas por Canal — Copart BI Dashboard" };
 
@@ -19,7 +20,7 @@ function EfficiencyBlock({ unit, rows }: { unit: BusinessUnit; rows: MediaEffici
     return a.cpa - b.cpa;
   });
   return (
-    <CardWrapper title={BUSINESS_UNIT_LABELS[unit]} subtitle="Spend e resultado nativo da mesma unidade — não misturar com cadastro_site">
+    <CardWrapper title={BUSINESS_UNIT_LABELS[unit]} subtitle="Spend e resultado nativo da mesma unidade">
       <div className="rounded-xl border border-[#dfe6ee] overflow-x-auto">
         <Table>
           <TableHeader>
@@ -95,10 +96,10 @@ export default async function ChannelGoalsPage({
           />
         </div>
 
-        <SectionTitle>Ranking 1 — volume de cadastro alocado</SectionTitle>
-        <p className="text-xs text-[#6c7685] -mt-2 mb-4">
-          Rateio de cadastro_site pelo first-touch GA4. Não é meta oficial Copart por canal. Pixel Meta e conversões Google não entram nesta tabela.
-        </p>
+        <SectionTitle>
+          Ranking 1 — volume de cadastro alocado
+          <InfoTip text="Rateio de cadastro_site pelo first-touch GA4. Não é meta oficial Copart por canal. Pixel Meta e conversões Google não entram nesta tabela." />
+        </SectionTitle>
         <CardWrapper className="mb-8">
           <div className="rounded-xl border border-[#dfe6ee] overflow-x-auto">
             <Table>

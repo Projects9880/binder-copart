@@ -1,12 +1,17 @@
 import { PageHeader, PageContent, SectionTitle, CardWrapper } from "@/components/layout/page-header";
 import { FunnelChart } from "@/components/charts/funnel-chart";
-import { LineChart } from "@/components/charts/line-chart";
+import { EvolutionChart } from "@/components/charts/evolution-chart";
 import { ChannelPerformanceTable } from "@/components/tables/channel-performance-table";
+import { PaidMediaEvents } from "@/components/cards/paid-media-events";
+import { GoogleQuarterly } from "@/components/cards/google-quarterly";
+import { KpiCard } from "@/components/cards/kpi-card";
+import { InfoTip } from "@/components/layout/info-tip";
 import { dataService } from "@/lib/data/data-service";
 import { COLORS } from "@/lib/constants";
 import { filtersFromSearchParams } from "@/lib/page-filters";
 import { formatDateRangeLabel } from "@/lib/filters";
 import type { SearchParamRecord } from "@/lib/filters";
+import { formatNumberFull, formatPercentage } from "@/lib/utils/formatters";
 
 export const metadata = { title: "Funil Leilão — Copart BI" };
 
@@ -16,59 +21,84 @@ export default async function FunnelPage({
   searchParams: Promise<SearchParamRecord>;
 }) {
   const filters = await filtersFromSearchParams(searchParams);
-  const [funnelData, channelPerf, trendData, weekly] = await Promise.all([
+  const leilaoFilters = { ...filters, campaignType: "leilao_compra" as const };
+  const [funnelData, channelPerf, series, paidEvents, googleQuarterly, kpis] = await Promise.all([
     dataService.getFunnelData("leilao", filters),
-    dataService.getChannelPerformance("leilao", { ...filters, campaignType: "leilao_compra" }),
-    dataService.getTrendData("entrantes", 31, filters),
-    dataService.getWeeklyRegistrations(filters),
+    dataService.getChannelPerformance("leilao", leilaoFilters),
+    dataService.getEvolutionSeries(filters),
+    dataService.getPaidMediaEvents(filters),
+    dataService.getGoogleQuarterly(leilaoFilters),
+    dataService.getOverviewKPIs(filters),
   ]);
 
   const period = formatDateRangeLabel(filters.dateRange.start, filters.dateRange.end);
+  const pageViews = funnelData.pageViews ?? 0;
+  const entrantes = funnelData.stages[0]?.value ?? 0;
+  const toEntrantes = pageViews === 0 ? 0 : (entrantes / pageViews) * 100;
+  const siteKpis = [
+    { key: "visitantesUnicos", data: kpis.visitantesUnicos, insights: ["Usuários únicos GA4, site inteiro"] },
+    { key: "logins", data: kpis.logins, insights: ["Evento sign_in do Resumo GA4 de agosto"] },
+    { key: "favoritados", data: kpis.favoritados, insights: ["Favoritar lote — intenção, fora do funil Copart"] },
+    { key: "registrationStart", data: kpis.registrationStart, insights: ["Início de cadastro GA4. Distinto de Entrante Copart."] },
+  ];
 
   return (
     <>
       <PageHeader
         title="Funil Leilão"
-        subtitle="Leilão/Compra — Entrantes → Habilitados → Licitantes → Arrematantes"
+        subtitle={`Leilão/Compra — ${period}`}
         badge="Executivo"
         badgeColor="#153a73"
       />
       <PageContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          <CardWrapper title={`Funil visual — ${period}`}>
+          <CardWrapper title="Topo do site e funil Copart">
+            <div className="rounded-2xl border border-[#dfe6ee] bg-[#f8fbff] p-4 mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">
+                  Page Views
+                  <InfoTip text="Evento page_view do GA4, site inteiro, recorte de mídia ago/2026. Não é view de um leilão específico do Excel Macro." />
+                </p>
+                <p className="text-2xl font-black text-[#0b1f3a]">{formatNumberFull(pageViews)}</p>
+              </div>
+              <p className="text-xs font-bold text-[#6c7685]">{formatPercentage(toEntrantes)} até entrantes</p>
+            </div>
             <FunnelChart stages={funnelData.stages} primaryColor={COLORS.teal} />
           </CardWrapper>
-          <CardWrapper title="Cadastros estimados por dia (GA4)">
-            <LineChart
-              labels={trendData.map((d) => `${d.date.slice(8)}/${d.date.slice(5, 7)}`)}
-              datasets={[{
-                label: "Cadastro (GA4)",
-                data: trendData.map((d) => d.value),
-                color: COLORS.teal,
-                fill: true,
-              }]}
-              valueFormatter="number"
-              height={280}
-            />
+          <CardWrapper title="Evolução">
+            <EvolutionChart points={series} />
           </CardWrapper>
         </div>
 
-        <SectionTitle>Performance por canal — Leilão/Compra</SectionTitle>
-        <p className="text-xs text-[#6c7685] -mt-2 mb-4">
-          Ordenado por volume. Gasto zero em Direto e Orgânico significa sem spend de mídia nesta carga — não que o canal seja de graça no negócio. Meta usa cadastro do pixel; Google usa conversões da conta; Direto/Orgânico rateiam cadastro_site pelo first-touch.
-        </p>
-        <div className="mb-8">
-          <ChannelPerformanceTable rows={channelPerf} />
+        <SectionTitle>Diagnóstico de site</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {siteKpis.map(({ key, data, insights }) => (
+            <KpiCard
+              key={key}
+              title={data.label}
+              value={data.formatted}
+              delta={data.delta}
+              deltaFormatted={data.deltaFormatted}
+              deltaType={data.deltaType}
+              period={data.period}
+              insights={insights}
+            />
+          ))}
         </div>
 
-        <SectionTitle>Cadastros estimados por semana (GA4)</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {weekly.map((row) => (
-            <div key={row.week} className="bg-white border border-[#dfe6ee] rounded-xl p-4 text-center">
-              <p className="text-xs text-[#6c7685] font-semibold mb-2">{row.week}</p>
-              <p className="text-2xl font-black text-[#0b1f3a]">{row.entrantes.toLocaleString("pt-BR")}</p>
-            </div>
-          ))}
+        <PaidMediaEvents
+          report={paidEvents}
+          featured={["cadastro_site", "register_to_bid", "click_bid_now", "sign_in"]}
+          channelEvents={["cadastro_site", "register_to_bid", "click_bid_now", "sign_in"]}
+        />
+        <GoogleQuarterly report={googleQuarterly} />
+
+        <SectionTitle>
+          Performance por canal — Leilão/Compra
+          <InfoTip text="Ordenado por volume. Gasto zero em Direto e Orgânico = sem spend de mídia nesta carga. Meta usa cadastro do pixel; Google usa conversões da conta; Direto/Orgânico rateiam cadastro_site pelo first-touch." />
+        </SectionTitle>
+        <div className="mb-8">
+          <ChannelPerformanceTable rows={channelPerf} />
         </div>
       </PageContent>
     </>

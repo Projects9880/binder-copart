@@ -70,10 +70,10 @@ export function DataSourceModal() {
                 <span className="font-bold text-xs text-[#0b1f3a]">Google Ads & Meta Ads</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e8f8ef] text-[#007342]">✅ Alta Confiabilidade</span>
               </div>
-              <p className="text-[11px] text-[#6c7685]">CSV de campanhas e anúncios Meta (Boleto, ago/2026) e de grupos/anúncios Google Ads (ago/2026). Unidades classificadas por nome (Leilão / Select/Venda / Select/Compra). Sem URL de peça Meta nem placement.</p>
+              <p className="text-[11px] text-[#6c7685]">CSV de campanhas e anúncios Meta (Boleto, ago/2026) e de grupos/anúncios Google Ads (ago/2026). Overlay trimestral (Google_Comparação_trimestral.csv, 15/06–15/09 vs 14/03–14/06) escala pelo overlap — não soma com o gasto de agosto.</p>
               <div className="flex items-center justify-between text-[10px] text-[#4a6080] font-semibold pt-1 border-t border-[#dfe6ee]">
-                <span>Recorte: 01–31/08/2026</span>
-                <span>Métricas: gasto, cliques, resultados</span>
+                <span>Ago: 01–31/08 · Trimestre: 15/06–15/09</span>
+                <span>Métricas: gasto, cliques, conversões</span>
               </div>
             </div>
 
@@ -83,10 +83,10 @@ export function DataSourceModal() {
                 <span className="font-bold text-xs text-[#0b1f3a]">Google Analytics 4 (GA4)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fff4df] text-[#8c5700]">⚠️ Média (Auditado)</span>
               </div>
-              <p className="text-[11px] text-[#6c7685]">Resumo dos relatórios GA4 (Copart Member Brazil): usuários, canais, eventos (cadastro_site, sign_in, registration_start, add_watchlist).</p>
+              <p className="text-[11px] text-[#6c7685]">Resumo GA4 ago/2026 (site inteiro) + download.csv de eventos principais de mídia paga (15/06–15/09 vs 14/03–14/06). O filtro escala a extração paga pelo overlap — não soma com o Resumo de agosto.</p>
               <div className="flex items-center justify-between text-[10px] text-[#4a6080] font-semibold pt-1 border-t border-[#dfe6ee]">
-                <span>Recorte: 01–31/08/2026</span>
-                <span>Jornadas: primeiro toque agregado</span>
+                <span>Resumo: 01–31/08 · Pago: 15/06–15/09</span>
+                <span>Sobreposição: 31 dias em agosto</span>
               </div>
             </div>
 

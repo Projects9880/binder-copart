@@ -1,9 +1,9 @@
-import { PageHeader, PageContent, SectionTitle } from "@/components/layout/page-header";
-import { BrazilHeatMap } from "@/components/charts/brazil-heatmap";
+import { PageHeader, PageContent } from "@/components/layout/page-header";
+import { RegionalExplorer } from "@/components/charts/regional-explorer";
 import { dataService } from "@/lib/data/data-service";
 import { filtersFromSearchParams } from "@/lib/page-filters";
 import type { SearchParamRecord } from "@/lib/filters";
-import { formatBRL, formatNumberFull, formatPercentage } from "@/lib/utils/formatters";
+import { InfoTip } from "@/components/layout/info-tip";
 
 export const metadata = { title: "Análise Regional — Copart BI" };
 
@@ -19,29 +19,13 @@ export default async function RegionalPage({
     <>
       <PageHeader
         title="Análise Regional"
-        subtitle="Rateio nacional por UF — esta carga GA4 não veio com estado, só país"
+        subtitle="Copart Excel set/2026 — 27 UFs, SC e GO inclusos. GA4 desta carga não tem estado."
         badge="Executivo"
         badgeColor="#153a73"
+        actions={<InfoTip text="Entrantes/habilitados por UF vêm do Excel Copart (semanas 30/08–05/09 e 06/09–12/09). UFs ausentes no arquivo ficam zero. Outros e Sem UF (Vazias) não entram no mapa, só no ranking. Per capita usa população IBGE 2024." />}
       />
       <PageContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BrazilHeatMap rows={rows} />
-          <div className="space-y-3">
-            <SectionTitle>Ranking por UF</SectionTitle>
-            {rows.map((row) => (
-              <div key={row.geo} className="bg-white border border-[#dfe6ee] rounded-2xl p-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-black text-[#0b1f3a]">{row.label}</p>
-                  <p className="text-xs text-[#6c7685]">{formatPercentage(row.taxa_habilitacao)} de habilitação</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-[#0b1f3a]">{formatNumberFull(row.entrantes)} ent.</p>
-                  <p className="text-xs text-[#6c7685]">{formatBRL(row.gasto)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <RegionalExplorer rows={rows} />
       </PageContent>
     </>
   );

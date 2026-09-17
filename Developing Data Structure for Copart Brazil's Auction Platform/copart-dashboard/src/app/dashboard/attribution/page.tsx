@@ -26,13 +26,16 @@ export default async function AttributionPage({
     <>
       <PageHeader
         title="Análise de Atribuição"
-        subtitle="Contribuição das campanhas nas etapas do funil da unidade selecionada"
-        badge="Executivo"
-        badgeColor="#153a73"
+        subtitle="Mockup — sem API de touchpoints. Números rateados, não jornada individual."
+        badge="Mockup"
+        badgeColor="#c77a00"
         actions={<AttributionGlossary />}
       />
       <PageContent>
-        <SectionTitle>Contribuição por etapa do funil</SectionTitle>
+        <SectionTitle>
+          Contribuição por etapa do funil
+          <span className="ml-2 align-middle text-[10px] font-black uppercase tracking-widest text-[#c77a00]">Mockup</span>
+        </SectionTitle>
         <div className="rounded-2xl border border-[#dfe6ee] overflow-x-auto mb-8">
           <Table>
             <TableHeader>

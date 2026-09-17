@@ -12,6 +12,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import type { TooltipItem } from "chart.js";
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(
@@ -32,8 +33,10 @@ interface LineChartProps {
     data: number[];
     color: string;
     fill?: boolean;
+    yAxisID?: "y" | "y1";
   }[];
   yLabel?: string;
+  y1Label?: string;
   valueFormatter?: "number" | "currency" | "percent" | "compact" | "raw";
   height?: number;
 }
@@ -50,6 +53,7 @@ export function LineChart({
   labels,
   datasets,
   yLabel,
+  y1Label,
   valueFormatter,
   height = 260,
 }: LineChartProps) {
@@ -57,6 +61,7 @@ export function LineChart({
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div style={{ height }} className="rounded-xl bg-[#f4f7fb]" />;
 
+  const dual = datasets.some((ds) => ds.yAxisID === "y1");
   const data = {
     labels,
     datasets: datasets.map((ds) => ({
@@ -72,6 +77,7 @@ export function LineChart({
       pointBackgroundColor: ds.color,
       pointBorderColor: "#fff",
       pointBorderWidth: 2,
+      yAxisID: ds.yAxisID ?? "y",
     })),
   };
 
@@ -101,10 +107,8 @@ export function LineChart({
         padding: 12,
         cornerRadius: 12,
         callbacks: {
-          label: (ctx: any) => {
-            const raw = ctx.parsed.y;
-            const v = formatValue(raw, valueFormatter);
-            return ` ${ctx.dataset.label}: ${v}`;
+          label: (ctx: TooltipItem<"line">) => {
+            return ` ${ctx.dataset.label}: ${formatValue(Number(ctx.parsed.y ?? 0), valueFormatter)}`;
           },
         },
       },
@@ -114,7 +118,7 @@ export function LineChart({
         grid: { display: false },
         border: { display: false },
         ticks: {
-          font: { size: 11, weight: 700 },
+          font: { size: 11, weight: 700 as const },
           color: "#6c7685",
         },
       },
@@ -122,16 +126,36 @@ export function LineChart({
         beginAtZero: true,
         min: 0,
         grace: 0,
+        position: "left" as const,
         grid: { color: "#dfe6ee", lineWidth: 1 },
         border: { display: false, dash: [4, 4] },
         ticks: {
-          font: { size: 11, weight: 700 },
+          font: { size: 11, weight: 700 as const },
           color: "#6c7685",
           callback: (value: number | string) =>
             valueFormatter ? formatValue(Number(value), valueFormatter) : value,
         },
         ...(yLabel ? { title: { display: true, text: yLabel, color: "#6c7685", font: { size: 11 } } } : {}),
       },
+      ...(dual
+        ? {
+            y1: {
+              beginAtZero: true,
+              min: 0,
+              grace: 0,
+              position: "right" as const,
+              grid: { drawOnChartArea: false },
+              border: { display: false },
+              ticks: {
+                font: { size: 11, weight: 700 as const },
+                color: "#6c7685",
+                callback: (value: number | string) =>
+                  valueFormatter ? formatValue(Number(value), valueFormatter) : value,
+              },
+              ...(y1Label ? { title: { display: true, text: y1Label, color: "#6c7685", font: { size: 11 } } } : {}),
+            },
+          }
+        : {}),
     },
   };
 

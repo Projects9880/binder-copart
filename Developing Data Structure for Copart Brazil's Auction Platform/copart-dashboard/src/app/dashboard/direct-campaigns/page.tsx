@@ -1,5 +1,6 @@
 import { PageHeader, PageContent, SectionTitle, CardWrapper } from "@/components/layout/page-header";
 import { CampaignTable } from "@/components/tables/campaign-table";
+import { GoogleQuarterly } from "@/components/cards/google-quarterly";
 import { dataService } from "@/lib/data/data-service";
 import { COLORS } from "@/lib/constants";
 import { filtersFromSearchParams } from "@/lib/page-filters";
@@ -14,9 +15,10 @@ export default async function SelectCampaignsPage({
   searchParams: Promise<SearchParamRecord>;
 }) {
   const filters = await filtersFromSearchParams(searchParams);
-  const [venda, compra] = await Promise.all([
+  const [venda, compra, googleQuarterly] = await Promise.all([
     dataService.getCampaignScorecards({ ...filters, campaignType: "select_venda" }),
     dataService.getCampaignScorecards({ ...filters, campaignType: "select_compra" }),
+    dataService.getGoogleQuarterly(filters),
   ]);
   const selectCampaigns = [...venda, ...compra];
   const spend = selectCampaigns.reduce((s, r) => s + r.spend, 0);
@@ -31,6 +33,7 @@ export default async function SelectCampaignsPage({
         badgeColor="#00a85a"
       />
       <PageContent>
+        <GoogleQuarterly report={googleQuarterly} units={["select_venda", "select_compra", "select_mix"]} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-[#dfe6ee] rounded-2xl p-5">
             <p className="text-xs uppercase tracking-widest font-bold text-[#6c7685] mb-2">Conversas Select/Venda</p>

@@ -2,17 +2,20 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  BUSINESS_UNIT_LABELS,
   CHANNEL_LABELS,
   CHANNELS,
   DEFAULT_DATE_RANGE,
-  FUNNEL_LABELS,
   GEO_OPTIONS,
 } from "@/lib/constants";
-import type { BusinessUnit, FunnelKey } from "@/lib/data/types";
+import type { BusinessUnit } from "@/lib/data/types";
 
-const UNITS: Array<BusinessUnit | "ALL"> = ["ALL", "leilao_compra", "select_venda", "select_compra"];
-const FUNNELS: Array<FunnelKey | "ALL"> = ["ALL", "leilao", "select_venda", "select_compra"];
+type BizMode = "ALL" | "leilao" | "select";
+
+function modeFromUnit(unit: string): BizMode {
+  if (unit === "leilao_compra") return "leilao";
+  if (unit === "select_venda" || unit === "select_compra") return "select";
+  return "ALL";
+}
 
 export function FilterBar() {
   const router = useRouter();
@@ -21,10 +24,15 @@ export function FilterBar() {
 
   const start = searchParams.get("start") || DEFAULT_DATE_RANGE.start;
   const end = searchParams.get("end") || DEFAULT_DATE_RANGE.end;
-  const unit = searchParams.get("unit") || "ALL";
-  const funnel = searchParams.get("funnel") || "ALL";
+  const unit = (searchParams.get("unit") || "ALL") as BusinessUnit | "ALL";
   const channel = searchParams.get("channel") || "ALL";
   const geo = searchParams.get("geo") || "ALL";
+  const mode = modeFromUnit(unit);
+
+  function push(next: URLSearchParams) {
+    const query = next.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  }
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -34,17 +42,18 @@ export function FilterBar() {
       params.delete("funnel");
       params.delete("campaign");
     }
-    if (key === "funnel") params.delete("campaign");
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    push(params);
   }
 
-  const funnelOptions = FUNNELS.filter((key) => {
-    if (key === "ALL") return true;
-    if (unit === "ALL") return true;
-    if (unit === "leilao_compra") return key === "leilao";
-    return key === unit;
-  });
+  function setMode(next: BizMode) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("funnel");
+    params.delete("campaign");
+    if (next === "ALL") params.delete("unit");
+    else if (next === "leilao") params.set("unit", "leilao_compra");
+    else params.set("unit", unit === "select_compra" ? "select_compra" : "select_venda");
+    push(params);
+  }
 
   const channelOptions = CHANNELS.filter((id) => {
     if (unit === "leilao_compra") return ["META", "GOOGLE", "ORGANIC", "DIRECT", "TIKTOK"].includes(id);
@@ -53,79 +62,70 @@ export function FilterBar() {
     return true;
   });
 
+  const banner =
+    mode === "leilao"
+      ? { text: "Você está vendo Leilão", bg: "bg-[#0b1f3a]", fg: "text-white" }
+      : mode === "select"
+        ? { text: unit === "select_compra" ? "Você está vendo Copart Select / Compra" : "Você está vendo Copart Select / Venda", bg: "bg-[#007342]", fg: "text-white" }
+        : { text: "Comparativo — Leilão e Select juntos, spend não se soma", bg: "bg-[#f4f7fb]", fg: "text-[#0b1f3a]" };
+
+  const seg = (active: boolean, activeClass: string) =>
+    `h-9 px-4 rounded-lg text-sm font-black transition-colors ${active ? activeClass : "bg-white text-[#6c7685] border border-[#dfe6ee]"}`;
+
   return (
-    <div className="sticky top-0 z-20 border-b border-[#dfe6ee] bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3">
-      <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row lg:items-end gap-3">
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-0">
-          Início
-          <input
-            type="date"
-            value={start}
-            onChange={(e) => setParam("start", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-0">
-          Fim
-          <input
-            type="date"
-            value={end}
-            onChange={(e) => setParam("end", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[140px]">
-          Unidade
-          <select
-            value={unit}
-            onChange={(e) => setParam("unit", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          >
-            <option value="ALL">Todas</option>
-            {UNITS.filter((u) => u !== "ALL").map((u) => (
-              <option key={u} value={u}>{BUSINESS_UNIT_LABELS[u]}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[150px]">
-          Funil
-          <select
-            value={funnel}
-            onChange={(e) => setParam("funnel", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          >
-            {funnelOptions.map((key) => (
-              <option key={key} value={key}>
-                {key === "ALL" ? "Todos" : FUNNEL_LABELS[key]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[150px]">
-          Canal
-          <select
-            value={channel}
-            onChange={(e) => setParam("channel", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          >
-            <option value="ALL">Todos</option>
-            {channelOptions.map((id) => (
-              <option key={id} value={id}>{CHANNEL_LABELS[id]}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[140px]">
-          Região
-          <select
-            value={geo}
-            onChange={(e) => setParam("geo", e.target.value)}
-            className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]"
-          >
-            {GEO_OPTIONS.map((g) => (
-              <option key={g.id} value={g.id}>{g.label}</option>
-            ))}
-          </select>
-        </label>
+    <div className="sticky top-0 z-20 border-b border-[#dfe6ee] bg-white/95 backdrop-blur-md">
+      <div className={`${banner.bg} ${banner.fg} px-4 sm:px-8 py-1.5 text-xs font-bold tracking-wide`}>
+        {banner.text}
+      </div>
+      <div className="px-4 sm:px-8 py-3">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Negócio</span>
+              <div className="flex gap-1">
+                <button type="button" className={seg(mode === "ALL", "bg-[#6c7685] text-white")} onClick={() => setMode("ALL")}>Comparativo</button>
+                <button type="button" className={seg(mode === "leilao", "bg-[#0b1f3a] text-white")} onClick={() => setMode("leilao")}>Leilão</button>
+                <button type="button" className={seg(mode === "select", "bg-[#00a85a] text-white")} onClick={() => setMode("select")}>Select</button>
+              </div>
+            </div>
+            {mode === "select" && (
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Funil Select</span>
+                <div className="flex gap-1">
+                  <button type="button" className={seg(unit === "select_venda", "bg-[#00a85a] text-white")} onClick={() => setParam("unit", "select_venda")}>Venda</button>
+                  <button type="button" className={seg(unit === "select_compra", "bg-[#00b8cf] text-white")} onClick={() => setParam("unit", "select_compra")}>Compra</button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-0">
+              Início
+              <input type="date" value={start} onChange={(e) => setParam("start", e.target.value)} className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]" />
+            </label>
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-0">
+              Fim
+              <input type="date" value={end} onChange={(e) => setParam("end", e.target.value)} className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]" />
+            </label>
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[150px]">
+              Canal
+              <select value={channel} onChange={(e) => setParam("channel", e.target.value)} className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]">
+                <option value="ALL">Todos</option>
+                {channelOptions.map((id) => (
+                  <option key={id} value={id}>{CHANNEL_LABELS[id]}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-widest font-bold text-[#6c7685] min-w-[140px]">
+              Região
+              <select value={geo} onChange={(e) => setParam("geo", e.target.value)} className="h-9 rounded-lg border border-[#dfe6ee] bg-[#f4f7fb] px-2 text-sm font-semibold text-[#0b1f3a]">
+                {GEO_OPTIONS.map((g) => (
+                  <option key={g.id} value={g.id}>{g.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   );

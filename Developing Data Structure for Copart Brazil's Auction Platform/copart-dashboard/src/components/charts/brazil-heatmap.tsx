@@ -58,7 +58,7 @@ export function BrazilHeatMap({ rows }: { rows: RegionalRow[] }) {
         })}
       </svg>
       <p className="absolute bottom-2 left-3 right-3 text-[10px] text-[#6c7685] font-semibold">
-        Intensidade = volume de entrantes no recorte. UFs sem dado aparecem mais claras. Mapa: Simplemaps.com.
+        Intensidade = KPI escolhido. UFs sem número no Excel Copart ficam claras. Mapa: Simplemaps.com.
       </p>
     </div>
   );

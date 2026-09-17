@@ -161,6 +161,10 @@ export interface FunnelData {
   type: FunnelKey;
   title?: string;
   subtitle?: string;
+  pageViews?: number;
+  sitePath?: FunnelStage[];
+  whatsappPath?: FunnelStage[];
+  joinStages?: FunnelStage[];
 }
 
 export interface WeeklyRegistration {
@@ -397,6 +401,10 @@ export interface RegionalRow {
   taxa_habilitacao: number;
   gasto: number;
   weight: number;
+  population: number;
+  perCapitaEntrantes: number;
+  perCapitaHabilitados: number;
+  source: "copart_excel" | "empty";
 }
 
 export interface KpiEvolutionPoint {
@@ -405,6 +413,102 @@ export interface KpiEvolutionPoint {
   entrantes: number;
   habilitados: number;
   gasto: number;
+}
+
+export interface EvolutionSeriesPoint {
+  date: string;
+  label: string;
+  entrantes: number;
+  habilitados: number;
+  pageViewsGa4: number;
+  pageViewsComprar: number;
+  pageViewsVender: number;
+  leads: number;
+}
+
+export interface PaidMediaEventRow {
+  event: string;
+  label: string;
+  current: number;
+  previous: number;
+  delta: number;
+}
+
+export interface PaidMediaChannelRow {
+  channel: string;
+  channelLabel: string;
+  event: string;
+  current: number;
+  previous: number;
+}
+
+export interface PaidMediaEventsReport {
+  overlapDays: number;
+  sourceDays: number;
+  scale: number;
+  start: string;
+  end: string;
+  compareStart: string;
+  compareEnd: string;
+  totalUsers: { current: number; previous: number; delta: number };
+  events: PaidMediaEventRow[];
+  channels: PaidMediaChannelRow[];
+}
+
+export type GoogleQuarterlyUnit = BusinessUnit | "select_mix";
+
+export interface GoogleQuarterlyMetric {
+  current: number;
+  previous: number;
+  delta: number;
+}
+
+export interface GoogleQuarterlyCampaign {
+  name: string;
+  status: string;
+  campaignType: string;
+  unit: GoogleQuarterlyUnit;
+  spend: number;
+  spendPrev: number;
+  conversions: number;
+  conversionsPrev: number;
+  clicks: number;
+  clicksPrev: number;
+  impressions: number;
+  impressionsPrev: number;
+}
+
+export interface GoogleQuarterlyTypeRow {
+  label: string;
+  spend: GoogleQuarterlyMetric;
+  conversions: GoogleQuarterlyMetric;
+  clicks: GoogleQuarterlyMetric;
+}
+
+export interface GoogleQuarterlyUnitRow {
+  unit: GoogleQuarterlyUnit;
+  label: string;
+  spend: GoogleQuarterlyMetric;
+  conversions: GoogleQuarterlyMetric;
+}
+
+export interface GoogleQuarterlyReport {
+  overlapDays: number;
+  sourceDays: number;
+  scale: number;
+  start: string;
+  end: string;
+  compareStart: string;
+  compareEnd: string;
+  totals: {
+    spend: GoogleQuarterlyMetric;
+    conversions: GoogleQuarterlyMetric;
+    clicks: GoogleQuarterlyMetric;
+    impressions: GoogleQuarterlyMetric;
+  };
+  byType: GoogleQuarterlyTypeRow[];
+  byUnit: GoogleQuarterlyUnitRow[];
+  campaigns: GoogleQuarterlyCampaign[];
 }
 
 export interface AlertThreshold {
@@ -485,6 +589,9 @@ export interface DataService {
   getJourneyInsights(filters: DashboardFilters): Promise<JourneyInsights>;
   getRegionalPerformance(filters: DashboardFilters): Promise<RegionalRow[]>;
   getKpiEvolution(filters: DashboardFilters, grain: "weekly" | "monthly"): Promise<KpiEvolutionPoint[]>;
+  getEvolutionSeries(filters: DashboardFilters): Promise<EvolutionSeriesPoint[]>;
+  getPaidMediaEvents(filters: DashboardFilters): Promise<PaidMediaEventsReport>;
+  getGoogleQuarterly(filters: DashboardFilters): Promise<GoogleQuarterlyReport>;
   getAlertThresholds(): Promise<AlertThreshold[]>;
   getVitoriaCoverage(): Promise<VitoriaCoverageItem[]>;
   getCreatives(filters: DashboardFilters): Promise<CreativePiece[]>;

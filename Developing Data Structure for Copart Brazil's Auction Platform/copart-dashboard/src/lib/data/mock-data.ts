@@ -25,6 +25,9 @@ import type {
   ChannelJourneyShare,
   RegionalRow,
   KpiEvolutionPoint,
+  EvolutionSeriesPoint,
+  PaidMediaEventsReport,
+  GoogleQuarterlyReport,
   AlertThreshold,
   VitoriaCoverageItem,
   CreativePiece,
@@ -104,7 +107,7 @@ const funnelSelectCompraBase: FunnelData = {
   title: "Funil Select/Compra",
   subtitle: "Venda de veículos do estoque",
   stages: [
-    { label: "Anúncios de estoque", value: 145000, description: "Impressões das ofertas Select" },
+    { label: "Impressões (Select/Compra)", value: 145000, description: "Impressões de mídia — não é estoque físico" },
     { label: "Visualização de lote", value: 12400, conversionRate: 8.55, description: "Páginas de detalhe" },
     { label: "Intenção / contato", value: 3100, conversionRate: 25.0, description: "Proposta ou contato" },
     { label: "Compradores habilitados", value: 1240, conversionRate: 40.0, description: "Pré-aprovados" },
@@ -163,8 +166,8 @@ const funnelStageAttributionBase: FunnelStageAttribution[] = [
   { campaign_name: "ORGANIC_LEILAO_BR_SEO_CORE", channel: "ORGANIC", unit: "leilao_compra", stages: { Entrantes: 1260, Habilitados: 630, Licitantes: 252, Arrematantes: 113 } },
   { campaign_name: "META_SELECT_VENDER_BR_CPC", channel: "META", unit: "select_venda", stages: { "Cliques CTA": 1960, Conversas: 1666, Qualificados: 1000, Vistorias: 500, "Veículos Captados": 250 } },
   { campaign_name: "BLIP_SELECT_VENDER_WHATSAPP", channel: "BLIP", unit: "select_venda", stages: { "Cliques CTA": 840, Conversas: 714, Qualificados: 428, Vistorias: 214, "Veículos Captados": 107 } },
-  { campaign_name: "GOOGLE_SELECT_COMPRAR_PMAX", channel: "GOOGLE", unit: "select_compra", stages: { "Anúncios de estoque": 85000, "Visualização de lote": 6800, "Intenção / contato": 1700, "Compradores habilitados": 680, "Veículos Vendidos": 136 } },
-  { campaign_name: "META_SELECT_COMPRAR_CATALOG", channel: "META", unit: "select_compra", stages: { "Anúncios de estoque": 60000, "Visualização de lote": 4200, "Intenção / contato": 1050, "Compradores habilitados": 420, "Veículos Vendidos": 84 } },
+  { campaign_name: "GOOGLE_SELECT_COMPRAR_PMAX", channel: "GOOGLE", unit: "select_compra", stages: { "Impressões (Select/Compra)": 85000, "Visualização de lote": 6800, "Intenção / contato": 1700, "Compradores habilitados": 680, "Veículos Vendidos": 136 } },
+  { campaign_name: "META_SELECT_COMPRAR_CATALOG", channel: "META", unit: "select_compra", stages: { "Impressões (Select/Compra)": 60000, "Visualização de lote": 4200, "Intenção / contato": 1050, "Compradores habilitados": 420, "Veículos Vendidos": 84 } },
 ];
 
 const alerts: Alert[] = [
@@ -611,6 +614,10 @@ export class MockDataService implements DataService {
           taxa_habilitacao: entrantes === 0 ? 0 : (habilitados / entrantes) * 100,
           gasto: scaleNumber(totalGasto, weight),
           weight,
+          population: 0,
+          perCapitaEntrantes: 0,
+          perCapitaHabilitados: 0,
+          source: "empty" as const,
         };
       });
   }
@@ -656,6 +663,46 @@ export class MockDataService implements DataService {
       { vision: "Redes sociais nativas", status: "parcial", location: "dados prontos; tela social ainda resumida" },
       { vision: "Controles manuais em planilha", status: "pendente", location: "substituir no ritual de Recomendações" },
     ];
+  }
+
+  async getEvolutionSeries(_filters: DashboardFilters): Promise<EvolutionSeriesPoint[]> {
+    return [];
+  }
+
+  async getPaidMediaEvents(_filters: DashboardFilters): Promise<PaidMediaEventsReport> {
+    return {
+      overlapDays: 0,
+      sourceDays: 93,
+      scale: 0,
+      start: "2026-06-15",
+      end: "2026-09-15",
+      compareStart: "2026-03-14",
+      compareEnd: "2026-06-14",
+      totalUsers: { current: 0, previous: 0, delta: 0 },
+      events: [],
+      channels: [],
+    };
+  }
+
+  async getGoogleQuarterly(_filters: DashboardFilters): Promise<GoogleQuarterlyReport> {
+    return {
+      overlapDays: 0,
+      sourceDays: 93,
+      scale: 0,
+      start: "2026-06-15",
+      end: "2026-09-15",
+      compareStart: "2026-03-14",
+      compareEnd: "2026-06-14",
+      totals: {
+        spend: { current: 0, previous: 0, delta: 0 },
+        conversions: { current: 0, previous: 0, delta: 0 },
+        clicks: { current: 0, previous: 0, delta: 0 },
+        impressions: { current: 0, previous: 0, delta: 0 },
+      },
+      byType: [],
+      byUnit: [],
+      campaigns: [],
+    };
   }
 
   async getCreatives(_filters: DashboardFilters): Promise<CreativePiece[]> {

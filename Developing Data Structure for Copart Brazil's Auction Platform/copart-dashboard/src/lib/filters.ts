@@ -1,5 +1,5 @@
 import type { DashboardFilters, Channel, CampaignType, FunnelKey } from "@/lib/data/types";
-import { DEFAULT_DATE_RANGE, GEO_WEIGHTS } from "@/lib/constants";
+import { DEFAULT_DATE_RANGE } from "@/lib/constants";
 
 export type SearchParamRecord = Record<string, string | string[] | undefined>;
 
@@ -60,14 +60,11 @@ export function coverageScale(
   srcDays: number
 ): number {
   const days = overlapDays(filters.dateRange.start, filters.dateRange.end, srcStart, srcEnd);
-  const geoScale = GEO_WEIGHTS[filters.geo] ?? 1;
-  return (days / Math.max(srcDays, 1)) * geoScale;
+  return days / Math.max(srcDays, 1);
 }
 
 export function filterScale(filters: DashboardFilters): number {
-  const dayScale = daysInRange(filters.dateRange.start, filters.dateRange.end) / 7;
-  const geoScale = GEO_WEIGHTS[filters.geo] ?? 1;
-  return dayScale * geoScale;
+  return daysInRange(filters.dateRange.start, filters.dateRange.end) / 7;
 }
 
 export function scaleNumber(value: number, scale: number): number {
@@ -78,6 +75,23 @@ export function formatDateRangeLabel(start: string, end: string): string {
   const [ys, ms, ds] = start.split("-");
   const [ye, me, de] = end.split("-");
   return `${ds}/${ms}${ys !== ye ? `/${ys}` : ""} – ${de}/${me}/${ye}`;
+}
+
+export function filtersToQuery(filters: DashboardFilters): string {
+  const params = new URLSearchParams();
+  params.set("start", filters.dateRange.start);
+  params.set("end", filters.dateRange.end);
+  if (filters.campaignType !== "ALL") params.set("unit", filters.campaignType);
+  if (filters.channel !== "ALL") params.set("channel", filters.channel);
+  if (filters.geo !== "ALL") params.set("geo", filters.geo);
+  if (filters.funnel !== "ALL") params.set("funnel", filters.funnel);
+  if (filters.campaign !== "ALL") params.set("campaign", filters.campaign);
+  return params.toString();
+}
+
+export function hrefWithFilters(path: string, filters: DashboardFilters): string {
+  const query = filtersToQuery(filters);
+  return query ? `${path}?${query}` : path;
 }
 
 export function unitMatchesFunnel(

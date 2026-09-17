@@ -24,9 +24,14 @@ import type {
   MetricValue,
   OverviewKPIs,
   OverallGoalSummary,
+  RegionalRow,
   TrafficMixBucket,
   TrafficSource,
   VolumeRankRow,
+  EvolutionSeriesPoint,
+  PaidMediaEventsReport,
+  GoogleQuarterlyReport,
+  GoogleQuarterlyUnit,
   MediaEfficiencyRow,
   WeeklyRegistration,
 } from "./types";
@@ -39,6 +44,7 @@ import {
   SELECT_COMPRA_LAST_STAGE,
   SELECT_VENDA_LAST_STAGE,
 } from "@/lib/constants";
+import { BRAZIL_UFS, IBGE_POPULATION_2024 } from "@/lib/data/ibge-population";
 import { formatNumberFull } from "@/lib/utils/formatters";
 
 export interface RawCampaign {
@@ -76,6 +82,10 @@ interface RawSnapshot {
     atingimentoEntrantesPct: number | null;
     atingimentoHabilitadosPct: number | null;
   }[];
+  copartDaily: { date: string; entrantes: number; habilitados: number }[];
+  copartByUf: { week: string; start: string; end: string; geo: string; entrantes: number; habilitados: number }[];
+  selectWeekly: { week: string; start: string; end: string; leads: number; vendas: number; entradas: number }[];
+  selectPageViews: { date: string; journey: "comprar" | "vender"; pageViews: number }[];
   ga4: {
     dailyActiveUsers: { date: string; value: number }[];
     dailyNewUsers: { date: string; value: number }[];
@@ -85,6 +95,53 @@ interface RawSnapshot {
     events: Record<string, number>;
     keyEvents: Record<string, number>;
   };
+  ga4PaidKeyEvents?: {
+    sourceFile: string;
+    metric: string;
+    start: string;
+    end: string;
+    compareStart: string;
+    compareEnd: string;
+    days: number;
+    compareDays: number;
+    totalUsers: { current: number; previous: number };
+    rows: { channel: string; event: string; current: number; previous: number }[];
+  };
+  googleQuarterly?: {
+    sourceFile: string;
+    start: string;
+    end: string;
+    compareStart: string;
+    compareEnd: string;
+    days: number;
+    compareDays: number;
+    totals: {
+      spend: { current: number; previous: number };
+      conversions: { current: number; previous: number };
+      clicks: { current: number; previous: number };
+      impressions: { current: number; previous: number };
+    };
+    byType: {
+      label: string;
+      spend: { current: number; previous: number };
+      conversions: { current: number; previous: number };
+      clicks: { current: number; previous: number };
+    }[];
+    campaigns: {
+      name: string;
+      status: string;
+      campaignType: string;
+      unit: GoogleQuarterlyUnit;
+      spend: number;
+      spendPrev: number;
+      conversions: number;
+      conversionsPrev: number;
+      clicks: number;
+      clicksPrev: number;
+      impressions: number;
+      impressionsPrev: number;
+    }[];
+  };
   campaigns: RawCampaign[];
   creatives: Omit<CreativePiece, "channel">[];
 }
@@ -92,7 +149,7 @@ interface RawSnapshot {
 export const rawSnapshot = snapshotJson as RawSnapshot;
 
 const MEDIA_DAYS = 31;
-const COPART_DAYS = 13;
+const COPART_DAYS = Math.max(rawSnapshot.copartDaily?.length ?? 16, 1);
 const HIST_HAB_RATE = 4536 / 7337;
 const LICITANTE_RATE = 0.4;
 const ARREMATANTE_RATE = 0.45;
@@ -173,6 +230,62 @@ function cadastroSite(): number {
   return eventCount("cadastro_site");
 }
 
+function copartDailyInRange(filters: DashboardFilters) {
+  return (rawSnapshot.copartDaily ?? []).filter(
+    (row) => row.date >= filters.dateRange.start && row.date <= filters.dateRange.end
+  );
+}
+
+function copartTotals(filters: DashboardFilters): { entrantes: number; habilitados: number } {
+  if (filters.geo !== "ALL") {
+    const rows = (rawSnapshot.copartByUf ?? []).filter(
+      (row) =>
+        row.geo === filters.geo &&
+        overlapDays(filters.dateRange.start, filters.dateRange.end, row.start, row.end) > 0
+    );
+    return {
+      entrantes: sum(rows.map((row) => row.entrantes)),
+      habilitados: sum(rows.map((row) => row.habilitados)),
+    };
+  }
+  const days = copartDailyInRange(filters);
+  if (days.length > 0) {
+    return {
+      entrantes: sum(days.map((row) => row.entrantes)),
+      habilitados: sum(days.map((row) => row.habilitados)),
+    };
+  }
+  const sep = copartSep2026();
+  return { entrantes: sep.entrantes, habilitados: sep.habilitados };
+}
+
+function selectTotals(filters: DashboardFilters) {
+  const weeks = (rawSnapshot.selectWeekly ?? []).filter(
+    (row) => overlapDays(filters.dateRange.start, filters.dateRange.end, row.start, row.end) > 0
+  );
+  if (weeks.length === 0) {
+    return { leads: 0, vendas: 0, entradas: 0 };
+  }
+  return {
+    leads: sum(weeks.map((row) => row.leads)),
+    vendas: sum(weeks.map((row) => row.vendas)),
+    entradas: sum(weeks.map((row) => row.entradas)),
+  };
+}
+
+function selectPageViewsInRange(journey: "comprar" | "vender", filters: DashboardFilters) {
+  return sum(
+    (rawSnapshot.selectPageViews ?? [])
+      .filter(
+        (row) =>
+          row.journey === journey &&
+          row.date >= filters.dateRange.start &&
+          row.date <= filters.dateRange.end
+      )
+      .map((row) => row.pageViews)
+  );
+}
+
 function metric(value: number, label: string, period: string): MetricValue {
   const formatted =
     Math.abs(value) >= 1_000_000
@@ -192,6 +305,64 @@ function metric(value: number, label: string, period: string): MetricValue {
 function ofUnit(unit: RawCampaign["unit"]): RawCampaign[] {
   return rawSnapshot.campaigns.filter((row) => row.unit === unit);
 }
+
+function paidChannelsForFilter(channel: DashboardFilters["channel"]): string[] | null {
+  if (channel === "ALL") return null;
+  if (channel === "GOOGLE") return ["Paid Search", "Cross-network"];
+  if (channel === "META") return ["Paid Social"];
+  return [];
+}
+
+const GOOGLE_UNIT_LABEL: Record<GoogleQuarterlyUnit, string> = {
+  leilao_compra: "Leilão/Compra",
+  select_venda: "Select/Venda",
+  select_compra: "Select/Compra",
+  select_mix: "Select (compra e venda)",
+};
+
+const GOOGLE_UNIT_ORDER: GoogleQuarterlyUnit[] = [
+  "leilao_compra",
+  "select_venda",
+  "select_compra",
+  "select_mix",
+];
+
+function googleUnitAllowed(unit: GoogleQuarterlyUnit, filters: DashboardFilters): boolean {
+  if (filters.campaignType !== "ALL") {
+    if (unit === filters.campaignType) return true;
+    return unit === "select_mix" && (filters.campaignType === "select_venda" || filters.campaignType === "select_compra");
+  }
+  if (filters.funnel !== "ALL") {
+    if (unit === "select_mix") return filters.funnel === "select_venda" || filters.funnel === "select_compra";
+    return unitMatchesFunnel(unit, filters.funnel);
+  }
+  return true;
+}
+
+function pctDelta(current: number, previous: number): number {
+  if (previous === 0) return current === 0 ? 0 : 100;
+  return ((current - previous) / previous) * 100;
+}
+
+const PAID_EVENT_LABEL: Record<string, string> = {
+  cadastro_site: "Cadastro no site",
+  register_to_bid: "Registrar para lance",
+  click_bid_now: "Clique em dar lance",
+  sign_in: "Login",
+  lead_vmc: "Lead VMC",
+  form_submit: "Envio de formulário",
+  lead_lp: "Lead landing",
+};
+
+const PAID_EVENT_ORDER = [
+  "cadastro_site",
+  "register_to_bid",
+  "click_bid_now",
+  "sign_in",
+  "lead_vmc",
+  "form_submit",
+  "lead_lp",
+];
 
 function channelRow(
   channel: string,
@@ -285,58 +456,67 @@ export class RawExportDataService extends MockDataService {
 
   async getGoalProgress(filters: DashboardFilters): Promise<GoalProgress[]> {
     const m = mediaScale(filters);
-    const c = copartScale(filters);
+    const copart = copartTotals(filters);
+    const hasCopart = copartDailyInRange(filters).length > 0 || filters.geo !== "ALL";
     const sep = copartSep2026();
-    const useCopart = c >= m && c > 0;
-    const entrantes = useCopart ? scaleNumber(sep.entrantes, c) : scaleNumber(cadastroSite(), m);
-    const hab = useCopart ? scaleNumber(sep.habilitados, c) : scaleNumber(cadastroSite() * HIST_HAB_RATE, m);
     const metaE = sep.metaEntrantes ?? GOALS.leilao_compra.entrantes_mensal;
     const metaH = sep.metaHabilitados ?? GOALS.leilao_compra.habilitados_mensal;
     const conversas = scaleNumber(
       sum(ofUnit("select_venda").map((row) => (row.resultType === "messaging" ? row.results : 0))),
       m
     );
-    const vendas = 0;
+    const select = selectTotals(filters);
     const convTarget = Math.round(GOALS.select_venda.conversas_semanal * (MEDIA_DAYS / 7));
-    const vendasTarget = Math.round(GOALS.select_compra.vendas_semanal * (MEDIA_DAYS / 7));
+    const leadsTarget = Math.round(GOALS.select_venda.conversas_semanal * 2);
+    const vendasTarget = Math.round(GOALS.select_compra.vendas_semanal * 2);
     const goals: GoalProgress[] = [
       {
         title: "Entrantes — Leilão/Compra",
-        current: entrantes,
+        current: hasCopart ? copart.entrantes : scaleNumber(cadastroSite(), m),
         target: metaE,
-        percentage: (entrantes / metaE) * 100,
+        percentage: (hasCopart ? copart.entrantes : scaleNumber(cadastroSite(), m)) / metaE * 100,
         delta: 0,
-        deltaLabel: useCopart ? "Copart set/2026 parcial" : "GA4 cadastro_site ago/2026",
+        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "GA4 cadastro_site ago/2026",
         deltaType: "neutral",
         unit: "leilao_compra",
       },
       {
         title: "Habilitados — Leilão/Compra",
-        current: hab,
+        current: hasCopart ? copart.habilitados : scaleNumber(cadastroSite() * HIST_HAB_RATE, m),
         target: metaH,
-        percentage: (hab / metaH) * 100,
+        percentage: ((hasCopart ? copart.habilitados : scaleNumber(cadastroSite() * HIST_HAB_RATE, m)) / metaH) * 100,
         delta: 0,
-        deltaLabel: useCopart ? "Copart set/2026 parcial" : "estimado pela taxa Copart set/2026",
+        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "estimado pela taxa Copart set/2026",
         deltaType: "neutral",
         unit: "leilao_compra",
       },
       {
-        title: "Conversas — Select/Venda",
+        title: "Conversas — Select/Venda (mídia)",
         current: conversas,
         target: convTarget,
         percentage: convTarget === 0 ? 0 : (conversas / convTarget) * 100,
         delta: 0,
-        deltaLabel: "Meta Ads messaging ago/2026",
+        deltaLabel: "Meta Ads messaging ago/2026 — não é lead CRM",
         deltaType: "neutral",
         unit: "select_venda",
       },
       {
-        title: "Veículos vendidos — Select/Compra",
-        current: vendas,
-        target: vendasTarget,
-        percentage: 0,
+        title: "Leads — Copart Select",
+        current: select.leads,
+        target: leadsTarget,
+        percentage: leadsTarget === 0 ? 0 : (select.leads / leadsTarget) * 100,
         delta: 0,
-        deltaLabel: "Purchases vazio no Meta — não extraído",
+        deltaLabel: "Excel Copart Select (semanas no recorte)",
+        deltaType: "neutral",
+        unit: "select_venda",
+      },
+      {
+        title: "Vendas — Copart Select",
+        current: select.vendas,
+        target: vendasTarget,
+        percentage: vendasTarget === 0 ? 0 : (select.vendas / vendasTarget) * 100,
+        delta: 0,
+        deltaLabel: "Excel Copart Select — não é pixel Purchases",
         deltaType: "neutral",
         unit: "select_compra",
       },
@@ -346,16 +526,14 @@ export class RawExportDataService extends MockDataService {
   }
 
   async getWeeklyRegistrations(filters: DashboardFilters = parseDashboardFilters()): Promise<WeeklyRegistration[]> {
-    const geo = mediaScale({ ...filters, dateRange: { start: rawSnapshot.mediaStart, end: rawSnapshot.mediaEnd } });
     const ratio = cadastroSite() / Math.max(newUsersTotal(), 1);
-    const weeks = [
+    const ga4Weeks = [
       { week: "01/08–07/08", start: "2026-08-01", end: "2026-08-07" },
       { week: "08/08–14/08", start: "2026-08-08", end: "2026-08-14" },
       { week: "15/08–21/08", start: "2026-08-15", end: "2026-08-21" },
       { week: "22/08–28/08", start: "2026-08-22", end: "2026-08-28" },
       { week: "29/08–31/08", start: "2026-08-29", end: "2026-08-31" },
-    ];
-    return weeks
+    ]
       .filter(({ start, end }) => overlapDays(filters.dateRange.start, filters.dateRange.end, start, end) > 0)
       .map(({ week, start, end }) => {
         const novos = sum(
@@ -365,11 +543,12 @@ export class RawExportDataService extends MockDataService {
                 d.date >= start &&
                 d.date <= end &&
                 d.date >= filters.dateRange.start &&
-                d.date <= filters.dateRange.end
+                d.date <= filters.dateRange.end &&
+                !(rawSnapshot.copartDaily ?? []).some((c) => c.date === d.date)
             )
             .map((d) => d.value)
         );
-        const entrantes = scaleNumber(novos * ratio, geo);
+        const entrantes = scaleNumber(novos * ratio, 1);
         const habilitados = scaleNumber(entrantes * HIST_HAB_RATE, 1);
         return {
           week,
@@ -378,28 +557,49 @@ export class RawExportDataService extends MockDataService {
           taxa_habilitacao: entrantes === 0 ? 0 : (habilitados / entrantes) * 100,
         };
       });
+
+    const copartDays = copartDailyInRange(filters);
+    if (copartDays.length === 0) return ga4Weeks;
+
+    const buckets = new Map<string, { week: string; entrantes: number; habilitados: number }>();
+    for (const row of copartDays) {
+      const ufWeek = (rawSnapshot.copartByUf ?? []).find((w) => row.date >= w.start && row.date <= w.end);
+      const key = ufWeek?.week ?? row.date;
+      const current = buckets.get(key) ?? { week: key, entrantes: 0, habilitados: 0 };
+      current.entrantes += row.entrantes;
+      current.habilitados += row.habilitados;
+      buckets.set(key, current);
+    }
+    const copartWeeks = [...buckets.values()].map((row) => ({
+      week: row.week,
+      entrantes: row.entrantes,
+      habilitados: row.habilitados,
+      taxa_habilitacao: row.entrantes === 0 ? 0 : (row.habilitados / row.entrantes) * 100,
+    }));
+    const seen = new Set(copartWeeks.map((row) => row.week));
+    return [...ga4Weeks.filter((row) => !seen.has(row.week)), ...copartWeeks];
   }
 
   async getFunnelData(type: Parameters<MockDataService["getFunnelData"]>[0], filters: DashboardFilters): Promise<FunnelData> {
     const m = mediaScale(filters);
-    const c = copartScale(filters);
+    const copart = copartTotals(filters);
+    const hasCopart = copartDailyInRange(filters).length > 0 || filters.geo !== "ALL";
     if (type === "leilao") {
-      const useCopart = c > m;
-      const entrantes = useCopart ? scaleNumber(copartSep2026().entrantes, c) : scaleNumber(cadastroSite(), m);
-      const habilitados = useCopart
-        ? scaleNumber(copartSep2026().habilitados, c)
-        : scaleNumber(cadastroSite() * HIST_HAB_RATE, m);
+      const entrantes = hasCopart ? copart.entrantes : scaleNumber(cadastroSite(), m);
+      const habilitados = hasCopart ? copart.habilitados : scaleNumber(cadastroSite() * HIST_HAB_RATE, m);
       const licitantes = scaleNumber(habilitados * LICITANTE_RATE, 1);
       const arrematantes = scaleNumber(licitantes * ARREMATANTE_RATE, 1);
+      const pageViews = scaleNumber(eventCount("page_view"), m);
       return {
         type: "leilao",
         title: "Funil Leilão",
-        subtitle: useCopart
-          ? "Copart ERP set/2026 parcial — licitantes/arrematantes estimados (sem extração)"
-          : "Entrantes = GA4 cadastro_site ago/2026; habilitados pela taxa Copart set/2026; etapas finais estimadas",
+        subtitle: hasCopart
+          ? "Page views GA4 (site) + Copart Excel — licitantes/arrematantes estimados"
+          : "Entrantes = GA4 cadastro_site ago/2026; habilitados pela taxa Copart; etapas finais estimadas",
+        pageViews,
         stages: rateStages([
-          { label: LEILAO_FUNNEL_STAGES[0], value: entrantes, description: useCopart ? "Copart ERP" : "GA4 cadastro_site" },
-          { label: LEILAO_FUNNEL_STAGES[1], value: habilitados, description: useCopart ? "Copart ERP" : "Estimado pela taxa Copart set/2026" },
+          { label: LEILAO_FUNNEL_STAGES[0], value: entrantes, description: hasCopart ? "Copart Excel" : "GA4 cadastro_site" },
+          { label: LEILAO_FUNNEL_STAGES[1], value: habilitados, description: hasCopart ? "Copart Excel" : "Estimado pela taxa Copart set/2026" },
           { label: LEILAO_FUNNEL_STAGES[2], value: licitantes, description: "Estimado (40% dos habilitados) — não veio nesta carga" },
           { label: LEILAO_FUNNEL_STAGES[3], value: arrematantes, description: "Estimado (45% dos licitantes) — não veio nesta carga" },
         ]),
@@ -407,17 +607,31 @@ export class RawExportDataService extends MockDataService {
     }
     if (type === "select_venda") {
       const rows = ofUnit("select_venda");
-      const cliques = scaleNumber(sum(rows.map((row) => row.clicks)), m);
+      const pageViewsVender = selectPageViewsInRange("vender", filters);
       const conversas = scaleNumber(sum(rows.map((row) => (row.resultType === "messaging" ? row.results : row.conversas))), m);
       const qualificados = scaleNumber(sum(rows.map((row) => row.newConversas || 0)), m);
+      const select = selectTotals(filters);
+      const cadastroSitePath = select.entradas;
       const vistorias = scaleNumber(qualificados * 0.5, 1);
       const captados = scaleNumber(vistorias * 0.5, 1);
       return {
         type: "select_venda",
         title: "Funil Select/Venda",
-        subtitle: "Cliques e conversas reais Meta/Google ago/2026; vistorias e captados estimados",
+        subtitle: "Dois caminhos (site e WhatsApp) se juntam em qualificados. Vistorias e captados estimados.",
+        sitePath: [
+          { label: "Page views (vender)", value: pageViewsVender, description: "GA4 da aba Select no Excel Copart" },
+          { label: "Cadastro / entradas", value: cadastroSitePath, description: "Entradas Copart Select no Excel" },
+        ],
+        whatsappPath: [
+          { label: "Conversas WhatsApp", value: conversas, description: "Mensagens Meta [Whats][Vender]" },
+        ],
+        joinStages: [
+          { label: "Qualificados", value: qualificados, description: "Novos contatos de mensagem no Meta" },
+          { label: "Vistorias", value: vistorias, description: "Estimado — sem extração de vistoria" },
+          { label: SELECT_VENDA_LAST_STAGE, value: captados, description: "Estimado — sem extração de captados" },
+        ],
         stages: rateStages([
-          { label: "Cliques CTA", value: cliques, description: "Cliques Meta + Google classificados como Select/Venda" },
+          { label: "Page views (vender)", value: pageViewsVender || conversas, description: "Topo: site Excel ou conversas Meta" },
           { label: "Conversas", value: conversas, description: "Mensagens iniciadas no Meta ([Whats][Vender])" },
           { label: "Qualificados", value: qualificados, description: "Novos contatos de mensagem no Meta" },
           { label: "Vistorias", value: vistorias, description: "Estimado — sem extração de vistoria nesta carga" },
@@ -428,18 +642,17 @@ export class RawExportDataService extends MockDataService {
     const rows = ofUnit("select_compra");
     const anuncios = scaleNumber(sum(rows.map((row) => row.impressions)), m);
     const views = scaleNumber(sum(rows.map((row) => (row.resultType === "landing" || row.resultType === "link" ? row.results : 0))), m);
-    const intencao = scaleNumber(sum(rows.map((row) => (row.resultType === "cadastro" ? row.results : 0))), m);
-    const hab = scaleNumber(intencao * 0.4, 1);
+    const select = selectTotals(filters);
+    const pageViewsComprar = selectPageViewsInRange("comprar", filters);
     return {
       type: "select_compra",
       title: "Funil Select/Compra",
-      subtitle: "Impressões e landing reais ago/2026; veículos vendidos não vieram (Purchases vazio)",
+      subtitle: "Impressões de mídia ago/2026; leads e vendas do Excel Copart Select",
       stages: rateStages([
-        { label: "Anúncios de estoque", value: anuncios, description: "Impressões Meta + Google Select/Compra" },
-        { label: "Visualização de lote", value: views, description: "Landing page views / cliques no Meta" },
-        { label: "Intenção / contato", value: intencao, description: "Cadastros pixel em campanhas de compra" },
-        { label: "Compradores habilitados", value: hab, description: "Estimado (40% da intenção) — sem extração" },
-        { label: SELECT_COMPRA_LAST_STAGE, value: 0, description: "Purchases vazio no export Meta" },
+        { label: "Impressões (Select/Compra)", value: anuncios, description: "Impressões Meta + Google — não é estoque físico" },
+        { label: "Page views (comprar)", value: pageViewsComprar || views, description: pageViewsComprar ? "GA4 Comprar no Excel Copart" : "Landing page views / cliques no Meta" },
+        { label: "Leads", value: select.leads, description: "Excel Copart Select" },
+        { label: SELECT_COMPRA_LAST_STAGE, value: select.vendas, description: "Excel Copart Select — pixel Purchases veio vazio" },
       ]),
     };
   }
@@ -577,17 +790,27 @@ export class RawExportDataService extends MockDataService {
 
   async getAlerts(): Promise<Alert[]> {
     const sep = copartSep2026();
+    const through = copartDailyInRange({
+      ...parseDashboardFilters(),
+      dateRange: { start: "2026-09-01", end: rawSnapshot.copartEnd },
+    });
+    const sepEntrantes = sum(through.map((row) => row.entrantes)) || sep.entrantes;
+    const lastDay = through.at(-1)?.date ?? rawSnapshot.copartEnd;
+    const dayNum = Number(lastDay.slice(8));
+    const expectedPace = Math.round((dayNum / 30) * 100);
+    const actualPace = sep.metaEntrantes ? Math.round((sepEntrantes / sep.metaEntrantes) * 100) : 0;
+    const whats = rawSnapshot.campaigns.find((row) => row.name.includes("[Whats][Vender]"));
     return [
       {
         id: "alert-copart-pace",
-        severity: "warning",
+        severity: actualPace + 5 < expectedPace ? "warning" : "info",
         title: "Ritmo de entrantes Copart (set/2026)",
-        description: `Parcial até 13/09: ${sep.entrantes} entrantes (${sep.atingimentoEntrantesPct}% da meta ${sep.metaEntrantes}). O mês em 13/30 dias exigiria ~43%.`,
+        description: `Série diária até ${lastDay.slice(8)}/09: ${sepEntrantes} entrantes (${actualPace}% da meta ${sep.metaEntrantes}). Em ${dayNum}/30 dias o ritmo linear seria ~${expectedPace}%.`,
         metric: "Entrantes",
-        expected: "43% no dia 13",
+        expected: `${expectedPace}% no dia ${dayNum}`,
         action: "Acompanhar cadastro pago vs orgânico na segunda quinzena",
         responsavel: MEDIA_OWNER,
-        timestamp: "2026-09-13T11:00:00Z",
+        timestamp: `${lastDay}T11:00:00Z`,
         isMedia: true,
       },
       {
@@ -602,18 +825,22 @@ export class RawExportDataService extends MockDataService {
         timestamp: "2026-08-31T11:00:00Z",
         isMedia: true,
       },
-      {
-        id: "alert-select-compra-google",
-        severity: "info",
-        title: "Google Ads Select/Compra residual",
-        description: `Grupo COMPRA gastou R$ ${ofUnit("select_compra").filter((r) => r.source === "google").reduce((s, r) => s + r.spend, 0).toFixed(2)} em agosto, contra R$ ${ofUnit("select_compra").filter((r) => r.source === "meta").reduce((s, r) => s + r.spend, 0).toFixed(2)} no Meta.`,
-        metric: "Investimento",
-        expected: "Mix de canais por unidade",
-        action: "Confirmar se o budget de compra deve permanecer no Meta",
-        responsavel: MEDIA_OWNER,
-        timestamp: "2026-08-31T11:00:00Z",
-        isMedia: true,
-      },
+      ...(whats && whats.results > 0
+        ? [
+            {
+              id: "alert-select-cpa",
+              severity: "info" as const,
+              title: "CPA de conversas Select/Venda",
+              description: `R$ ${(whats.spend / whats.results).toFixed(2)} por conversa Meta (${whats.results} mensagens, R$ ${whats.spend.toFixed(2)}). Lead CRM do Excel é outra métrica.`,
+              metric: "CPA conversa",
+              expected: "Custo por conversa sob revisão",
+              action: "Não misturar conversa Meta com lead Copart Select",
+              responsavel: MEDIA_OWNER,
+              timestamp: "2026-08-31T11:00:00Z",
+              isMedia: true,
+            },
+          ]
+        : []),
     ];
   }
 
@@ -623,14 +850,14 @@ export class RawExportDataService extends MockDataService {
     const gap = ga4Cad === 0 ? 0 : (Math.abs(ga4Cad - metaCad) / ga4Cad) * 100;
     return [
       { source_a: "Meta Ads (pixel Cadastro_site)", source_b: "GA4 cadastro_site", discrepancy: gap, sla: 15, status: "critical" },
-      { source_a: "Google Ads (conversões)", source_b: "GA4 Paid Search", discrepancy: 8.5, sla: 10, status: "ok" },
-      { source_a: "Copart ERP set/2026", source_b: "GA4 ago/2026", discrepancy: 100, sla: 15, status: "warning" },
+      { source_a: "Copart Excel set/2026", source_b: "GA4 ago/2026", discrepancy: 100, sla: 15, status: "warning" },
     ];
   }
 
   async getRecommendations(): Promise<ActionRecommendation[]> {
     const cadastro = rawSnapshot.campaigns.find((row) => row.name.includes("[Cadastro]Leilão"));
     const whats = rawSnapshot.campaigns.find((row) => row.name.includes("[Whats][Vender]"));
+    const select = selectTotals(parseDashboardFilters({ start: "2026-08-30", end: "2026-09-14" }));
     return [
       {
         id: "rec-1",
@@ -646,10 +873,12 @@ export class RawExportDataService extends MockDataService {
       {
         id: "rec-2",
         priority: 2,
-        title: "Revisar CPA de mensagens Select/Venda",
+        title: whats && whats.results > 0 ? "Não misturar CPA de conversa com lead Select" : "Revisar mensagens Select/Venda",
         campaign: whats?.name,
-        reason: whats ? `R$ ${(whats.spend / whats.results).toFixed(2)} por conversa (${whats.results} resultados, R$ ${whats.spend.toFixed(2)}).` : "",
-        impact: "Custo por conversa Blip sob controle",
+        reason: whats && whats.results > 0
+          ? `R$ ${(whats.spend / whats.results).toFixed(2)} por conversa Meta. O Excel Copart traz ${select.leads} leads e ${select.vendas} vendas nas duas primeiras semanas.`
+          : "Sem volume de mensagem no recorte.",
+        impact: "Leitura correta de Select/Venda",
         budget_change: undefined,
         responsavel: MEDIA_OWNER,
         deadline: "Próxima terça",
@@ -658,9 +887,9 @@ export class RawExportDataService extends MockDataService {
       {
         id: "rec-3",
         priority: 3,
-        title: "Pedir licitantes e arrematantes ao ERP",
-        reason: "A carga Copart só trouxe entrantes e habilitados. Funil Leilão de 4 etapas fica estimado no fundo.",
-        impact: "Funil Leilão 100% real",
+        title: "Pedir licitantes, arrematantes e vistorias ao ERP",
+        reason: `Vendas Select já vieram no Excel (${select.vendas}). Funil Leilão ainda estima licitantes/arrematantes; Select/Venda ainda estima vistoria e captados.`,
+        impact: "Funis 100% reais nas etapas finais",
         responsavel: "Vitória",
         deadline: "Próxima quarta",
         isMedia: false,
@@ -776,6 +1005,13 @@ export class RawExportDataService extends MockDataService {
   }
 
   async getTrendData(metricName: string, days: number, filters: DashboardFilters): Promise<{ date: string; value: number }[]> {
+    const copartDays = copartDailyInRange(filters);
+    if ((metricName === "entrantes" || metricName === "habilitados") && copartDays.length > 0) {
+      return copartDays.slice(0, days).map((row) => ({
+        date: row.date,
+        value: metricName === "habilitados" ? row.habilitados : row.entrantes,
+      }));
+    }
     const series =
       metricName === "novos" || metricName === "novosUsuarios"
         ? rawSnapshot.ga4.dailyNewUsers
@@ -788,7 +1024,7 @@ export class RawExportDataService extends MockDataService {
       if (metricName === "entrantes") return { date: point.date, value: Math.round(point.value * ratio) };
       if (metricName === "habilitados") return { date: point.date, value: Math.round(point.value * ratio * HIST_HAB_RATE) };
       if (metricName === "custo_por_entrante") return { date: point.date, value: cadastroSite() === 0 ? 0 : spend / cadastroSite() };
-      if (metricName === "conversas") return { date: point.date, value: Math.round(430 / MEDIA_DAYS) };
+      if (metricName === "conversas") return { date: point.date, value: 0 };
       return { date: point.date, value: Math.round(point.value) };
     });
   }
@@ -954,6 +1190,87 @@ export class RawExportDataService extends MockDataService {
     };
   }
 
+  async getRegionalPerformance(filters: DashboardFilters): Promise<RegionalRow[]> {
+    const weeks = (rawSnapshot.copartByUf ?? []).filter(
+      (row) => overlapDays(filters.dateRange.start, filters.dateRange.end, row.start, row.end) > 0
+    );
+    const byGeo = new Map<string, { entrantes: number; habilitados: number }>();
+    for (const row of weeks) {
+      const current = byGeo.get(row.geo) ?? { entrantes: 0, habilitados: 0 };
+      current.entrantes += row.entrantes;
+      current.habilitados += row.habilitados;
+      byGeo.set(row.geo, current);
+    }
+    const extras = [
+      { geo: "OUTROS", label: "Outros" },
+      { geo: "VAZIAS", label: "Sem UF (Vazias)" },
+    ];
+    const ufs = BRAZIL_UFS.map((uf) => ({ geo: uf.id, label: uf.label }));
+    const rows = [...ufs, ...extras]
+      .filter((item) => filters.geo === "ALL" || filters.geo === item.geo)
+      .map((item) => {
+        const stats = byGeo.get(item.geo) ?? { entrantes: 0, habilitados: 0 };
+        const population = IBGE_POPULATION_2024[item.geo] ?? 0;
+        const per100k = population / 100_000;
+        return {
+          geo: item.geo,
+          label: item.label,
+          entrantes: stats.entrantes,
+          habilitados: stats.habilitados,
+          taxa_habilitacao: stats.entrantes === 0 ? 0 : (stats.habilitados / stats.entrantes) * 100,
+          gasto: 0,
+          weight: 0,
+          population,
+          perCapitaEntrantes: per100k === 0 ? 0 : stats.entrantes / per100k,
+          perCapitaHabilitados: per100k === 0 ? 0 : stats.habilitados / per100k,
+          source: stats.entrantes > 0 || stats.habilitados > 0 ? ("copart_excel" as const) : ("empty" as const),
+        };
+      });
+    return rows.sort((a, b) => b.entrantes - a.entrantes || a.label.localeCompare(b.label, "pt-BR"));
+  }
+
+  async getEvolutionSeries(filters: DashboardFilters): Promise<EvolutionSeriesPoint[]> {
+    const dates = new Set<string>();
+    for (const row of copartDailyInRange(filters)) dates.add(row.date);
+    for (const row of sliceDaily(rawSnapshot.ga4.dailyActiveUsers, filters)) dates.add(row.date);
+    for (const row of rawSnapshot.selectPageViews ?? []) {
+      if (row.date >= filters.dateRange.start && row.date <= filters.dateRange.end) dates.add(row.date);
+    }
+    const copart = new Map(copartDailyInRange(filters).map((row) => [row.date, row]));
+    const ga4 = new Map(sliceDaily(rawSnapshot.ga4.dailyActiveUsers, filters).map((row) => [row.date, row.value]));
+    const comprar = new Map(
+      (rawSnapshot.selectPageViews ?? [])
+        .filter((row) => row.journey === "comprar")
+        .map((row) => [row.date, row.pageViews])
+    );
+    const vender = new Map(
+      (rawSnapshot.selectPageViews ?? [])
+        .filter((row) => row.journey === "vender")
+        .map((row) => [row.date, row.pageViews])
+    );
+    const leadsByDate = new Map<string, number>();
+    for (const week of rawSnapshot.selectWeekly ?? []) {
+      if (overlapDays(filters.dateRange.start, filters.dateRange.end, week.start, week.end) > 0) {
+        leadsByDate.set(week.end, week.leads);
+      }
+    }
+    return [...dates]
+      .sort()
+      .map((date) => {
+        const [y, m, d] = date.split("-");
+        return {
+          date,
+          label: `${d}/${m}`,
+          entrantes: copart.get(date)?.entrantes ?? 0,
+          habilitados: copart.get(date)?.habilitados ?? 0,
+          pageViewsGa4: Math.round(ga4.get(date) ?? 0),
+          pageViewsComprar: comprar.get(date) ?? 0,
+          pageViewsVender: vender.get(date) ?? 0,
+          leads: leadsByDate.get(date) ?? 0,
+        };
+      });
+  }
+
   async getKpiEvolution(filters: DashboardFilters, grain: "weekly" | "monthly"): Promise<KpiEvolutionPoint[]> {
     const m = mediaScale(filters);
     if (grain === "monthly") {
@@ -975,11 +1292,211 @@ export class RawExportDataService extends MockDataService {
     const weeks = await this.getWeeklyRegistrations(filters);
     return weeks.map((week) => ({
       period: week.week,
-      platform: "Cadastro (GA4)",
+      platform: week.week.includes("/09") || week.week.startsWith("30/08") ? "Cadastro (Copart)" : "Cadastro (GA4)",
       entrantes: week.entrantes,
       habilitados: week.habilitados,
       gasto: 0,
     }));
+  }
+
+  async getPaidMediaEvents(filters: DashboardFilters): Promise<PaidMediaEventsReport> {
+    const extract = rawSnapshot.ga4PaidKeyEvents;
+    const empty: PaidMediaEventsReport = {
+      overlapDays: 0,
+      sourceDays: extract?.days ?? 93,
+      scale: 0,
+      start: extract?.start ?? "2026-06-15",
+      end: extract?.end ?? "2026-09-15",
+      compareStart: extract?.compareStart ?? "2026-03-14",
+      compareEnd: extract?.compareEnd ?? "2026-06-14",
+      totalUsers: { current: 0, previous: 0, delta: 0 },
+      events: [],
+      channels: [],
+    };
+    if (!extract) return empty;
+    const overlap = overlapDays(filters.dateRange.start, filters.dateRange.end, extract.start, extract.end);
+    const scale = overlap / Math.max(extract.days, 1);
+    const allowed = paidChannelsForFilter(filters.channel);
+    const rows = extract.rows.filter((row) => (allowed === null ? true : allowed.includes(row.channel)));
+    const apply = (value: number) => scaleNumber(value, scale);
+    const byEvent = new Map<string, { current: number; previous: number }>();
+    for (const row of rows) {
+      const current = byEvent.get(row.event) ?? { current: 0, previous: 0 };
+      current.current += row.current;
+      current.previous += row.previous;
+      byEvent.set(row.event, current);
+    }
+    const events = PAID_EVENT_ORDER.filter((event) => byEvent.has(event)).map((event) => {
+      const raw = byEvent.get(event)!;
+      const current = apply(raw.current);
+      const previous = apply(raw.previous);
+      return {
+        event,
+        label: PAID_EVENT_LABEL[event] ?? event,
+        current,
+        previous,
+        delta: pctDelta(current, previous),
+      };
+    });
+    const channels = rows
+      .map((row) => ({
+        channel: row.channel,
+        channelLabel: GA4_CHANNEL_LABEL[row.channel] ?? row.channel,
+        event: row.event,
+        current: apply(row.current),
+        previous: apply(row.previous),
+      }))
+      .sort((a, b) => b.current - a.current);
+    const totalCurrent = apply(allowed === null ? extract.totalUsers.current : sum(rows.map((row) => row.current)));
+    const totalPrevious = apply(allowed === null ? extract.totalUsers.previous : sum(rows.map((row) => row.previous)));
+    return {
+      overlapDays: overlap,
+      sourceDays: extract.days,
+      scale,
+      start: extract.start,
+      end: extract.end,
+      compareStart: extract.compareStart,
+      compareEnd: extract.compareEnd,
+      totalUsers: {
+        current: totalCurrent,
+        previous: totalPrevious,
+        delta: pctDelta(totalCurrent, totalPrevious),
+      },
+      events,
+      channels,
+    };
+  }
+
+  async getGoogleQuarterly(filters: DashboardFilters): Promise<GoogleQuarterlyReport> {
+    const extract = rawSnapshot.googleQuarterly;
+    const empty: GoogleQuarterlyReport = {
+      overlapDays: 0,
+      sourceDays: extract?.days ?? 93,
+      scale: 0,
+      start: extract?.start ?? "2026-06-15",
+      end: extract?.end ?? "2026-09-15",
+      compareStart: extract?.compareStart ?? "2026-03-14",
+      compareEnd: extract?.compareEnd ?? "2026-06-14",
+      totals: {
+        spend: { current: 0, previous: 0, delta: 0 },
+        conversions: { current: 0, previous: 0, delta: 0 },
+        clicks: { current: 0, previous: 0, delta: 0 },
+        impressions: { current: 0, previous: 0, delta: 0 },
+      },
+      byType: [],
+      byUnit: [],
+      campaigns: [],
+    };
+    if (!extract) return empty;
+    if (filters.channel !== "ALL" && filters.channel !== "GOOGLE") return empty;
+    const overlap = overlapDays(filters.dateRange.start, filters.dateRange.end, extract.start, extract.end);
+    if (overlap === 0) return empty;
+    const scale = overlap / Math.max(extract.days, 1);
+    const allowed = extract.campaigns.filter((row) => googleUnitAllowed(row.unit, filters));
+    if (allowed.length === 0) return { ...empty, overlapDays: overlap, scale, sourceDays: extract.days };
+
+    const metric = (current: number, previous: number) => ({
+      current,
+      previous,
+      delta: pctDelta(current, previous),
+    });
+    const filtered = filters.campaignType !== "ALL" || filters.funnel !== "ALL";
+    const spendCurrent = scaleMoney(filtered ? sum(allowed.map((row) => row.spend)) : extract.totals.spend.current, scale);
+    const spendPrevious = scaleMoney(filtered ? sum(allowed.map((row) => row.spendPrev)) : extract.totals.spend.previous, scale);
+    const convCurrent = scaleMoney(filtered ? sum(allowed.map((row) => row.conversions)) : extract.totals.conversions.current, scale);
+    const convPrevious = scaleMoney(filtered ? sum(allowed.map((row) => row.conversionsPrev)) : extract.totals.conversions.previous, scale);
+    const clicksCurrent = scaleNumber(filtered ? sum(allowed.map((row) => row.clicks)) : extract.totals.clicks.current, scale);
+    const clicksPrevious = scaleNumber(filtered ? sum(allowed.map((row) => row.clicksPrev)) : extract.totals.clicks.previous, scale);
+    const imprCurrent = scaleNumber(filtered ? sum(allowed.map((row) => row.impressions)) : extract.totals.impressions.current, scale);
+    const imprPrevious = scaleNumber(filtered ? sum(allowed.map((row) => row.impressionsPrev)) : extract.totals.impressions.previous, scale);
+
+    const byUnitMap = new Map<GoogleQuarterlyUnit, { spend: number; spendPrev: number; conversions: number; conversionsPrev: number }>();
+    for (const row of allowed) {
+      const current = byUnitMap.get(row.unit) ?? { spend: 0, spendPrev: 0, conversions: 0, conversionsPrev: 0 };
+      current.spend += row.spend;
+      current.spendPrev += row.spendPrev;
+      current.conversions += row.conversions;
+      current.conversionsPrev += row.conversionsPrev;
+      byUnitMap.set(row.unit, current);
+    }
+
+    const byTypeSource = filtered
+      ? Array.from(
+          allowed.reduce((acc, row) => {
+            const current = acc.get(row.campaignType) ?? {
+              spend: 0,
+              spendPrev: 0,
+              conversions: 0,
+              conversionsPrev: 0,
+              clicks: 0,
+              clicksPrev: 0,
+            };
+            current.spend += row.spend;
+            current.spendPrev += row.spendPrev;
+            current.conversions += row.conversions;
+            current.conversionsPrev += row.conversionsPrev;
+            current.clicks += row.clicks;
+            current.clicksPrev += row.clicksPrev;
+            acc.set(row.campaignType, current);
+            return acc;
+          }, new Map<string, { spend: number; spendPrev: number; conversions: number; conversionsPrev: number; clicks: number; clicksPrev: number }>())
+        ).map(([label, row]) => ({
+          label,
+          spend: { current: row.spend, previous: row.spendPrev },
+          conversions: { current: row.conversions, previous: row.conversionsPrev },
+          clicks: { current: row.clicks, previous: row.clicksPrev },
+        }))
+      : extract.byType;
+
+    return {
+      overlapDays: overlap,
+      sourceDays: extract.days,
+      scale,
+      start: extract.start,
+      end: extract.end,
+      compareStart: extract.compareStart,
+      compareEnd: extract.compareEnd,
+      totals: {
+        spend: metric(spendCurrent, spendPrevious),
+        conversions: metric(convCurrent, convPrevious),
+        clicks: metric(clicksCurrent, clicksPrevious),
+        impressions: metric(imprCurrent, imprPrevious),
+      },
+      byType: byTypeSource
+        .map((row) => ({
+          label: row.label,
+          spend: metric(scaleMoney(row.spend.current, scale), scaleMoney(row.spend.previous, scale)),
+          conversions: metric(scaleMoney(row.conversions.current, scale), scaleMoney(row.conversions.previous, scale)),
+          clicks: metric(scaleNumber(row.clicks.current, scale), scaleNumber(row.clicks.previous, scale)),
+        }))
+        .filter((row) => row.spend.current > 0 || row.spend.previous > 0)
+        .sort((a, b) => b.spend.current - a.spend.current),
+      byUnit: GOOGLE_UNIT_ORDER.filter((unit) => byUnitMap.has(unit)).map((unit) => {
+        const row = byUnitMap.get(unit)!;
+        return {
+          unit,
+          label: GOOGLE_UNIT_LABEL[unit],
+          spend: metric(scaleMoney(row.spend, scale), scaleMoney(row.spendPrev, scale)),
+          conversions: metric(scaleMoney(row.conversions, scale), scaleMoney(row.conversionsPrev, scale)),
+        };
+      }),
+      campaigns: allowed
+        .map((row) => ({
+          name: row.name,
+          status: row.status,
+          campaignType: row.campaignType,
+          unit: row.unit,
+          spend: scaleMoney(row.spend, scale),
+          spendPrev: scaleMoney(row.spendPrev, scale),
+          conversions: scaleMoney(row.conversions, scale),
+          conversionsPrev: scaleMoney(row.conversionsPrev, scale),
+          clicks: scaleNumber(row.clicks, scale),
+          clicksPrev: scaleNumber(row.clicksPrev, scale),
+          impressions: scaleNumber(row.impressions, scale),
+          impressionsPrev: scaleNumber(row.impressionsPrev, scale),
+        }))
+        .sort((a, b) => b.spend - a.spend),
+    };
   }
 
   async getCreatives(filters: DashboardFilters): Promise<CreativePiece[]> {

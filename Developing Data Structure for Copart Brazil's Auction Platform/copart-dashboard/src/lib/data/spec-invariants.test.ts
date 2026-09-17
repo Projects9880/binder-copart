@@ -215,10 +215,114 @@ describe("jornadas e evolução", () => {
     expect(monthly.filter((p) => p.period === "Set/25")).toHaveLength(1);
   });
 
-  it("evolução semanal tem uma série só", async () => {
+  it("evolução semanal rotula GA4 e Copart sem misturar plataformas inventadas", async () => {
     const weekly = await service.getKpiEvolution(month, "weekly");
     const platforms = [...new Set(weekly.map((p) => p.platform))];
-    expect(platforms).toEqual(["Cadastro (GA4)"]);
+    expect(platforms).toContain("Cadastro (GA4)");
+    expect(platforms).toContain("Cadastro (Copart)");
     expect(weekly.length).toBeGreaterThan(1);
+    expect(platforms.every((p) => p.startsWith("Cadastro"))).toBe(true);
+  });
+});
+
+describe("Excel Copart set/2026", () => {
+  const copartWeek = parseDashboardFilters({
+    start: "2026-08-30",
+    end: "2026-09-05",
+  });
+  const copartRange = parseDashboardFilters({
+    start: "2026-08-30",
+    end: "2026-09-14",
+  });
+
+  it("soma UF + Outros + Vazias igual ao diário da semana e SC/GO > 0", async () => {
+    const rows = await service.getRegionalPerformance(copartWeek);
+    const ufs = rows.filter((row) => row.geo !== "OUTROS" && row.geo !== "VAZIAS");
+    expect(ufs).toHaveLength(27);
+    const sc = rows.find((row) => row.geo === "SC");
+    const go = rows.find((row) => row.geo === "GO");
+    const ac = rows.find((row) => row.geo === "AC");
+    expect(sc?.entrantes).toBe(61);
+    expect(go?.entrantes).toBe(113);
+    expect(ac?.entrantes).toBe(0);
+    expect(rows.find((row) => row.geo === "VAZIAS")?.entrantes).toBeGreaterThan(0);
+    const daily = await service.getTrendData("entrantes", 31, copartWeek);
+    expect(rows.reduce((sum, row) => sum + row.entrantes, 0)).toBe(daily.reduce((sum, row) => sum + row.value, 0));
+  });
+
+  it("GEO_WEIGHTS não altera gasto de mídia nem page views nacionais", async () => {
+    const national = parseDashboardFilters({ start: "2026-08-01", end: "2026-08-31" });
+    const sp = { ...national, geo: "SP" };
+    const spendAll = (await service.getMediaEfficiency(national)).reduce((sum, row) => sum + row.spend, 0);
+    const spendSp = (await service.getMediaEfficiency(sp)).reduce((sum, row) => sum + row.spend, 0);
+    expect(spendSp).toBe(spendAll);
+    const kpisAll = await service.getOverviewKPIs(national);
+    const kpisSp = await service.getOverviewKPIs(sp);
+    expect(kpisSp.pageViews.value).toBe(kpisAll.pageViews.value);
+  });
+
+  it("Leilão e Select isolam spend; Select/Compra usa vendas do Excel", async () => {
+    const leilao = await service.getChannelPerformance("leilao", copartRange);
+    const selectVenda = await service.getChannelPerformance("select_venda", copartRange);
+    const selectCompra = await service.getChannelPerformance("select_compra", copartRange);
+    const spendLeilao = leilao.reduce((sum, row) => sum + row.gasto, 0);
+    const spendSelect =
+      selectVenda.reduce((sum, row) => sum + row.gasto, 0) + selectCompra.reduce((sum, row) => sum + row.gasto, 0);
+    expect(spendLeilao).toBeGreaterThan(0);
+    expect(spendSelect).toBeGreaterThan(0);
+    expect(spendLeilao).not.toBe(spendSelect);
+    const compra = await service.getFunnelData("select_compra", copartRange);
+    expect(compra.stages[0]?.label).toBe("Impressões (Select/Compra)");
+    expect(compra.stages.at(-1)?.value).toBe(148);
+    const leilaoFunnel = await service.getFunnelData("leilao", copartRange);
+    expect(leilaoFunnel.pageViews).toBeGreaterThan(leilaoFunnel.stages[0].value);
+  });
+
+  it("GA4 mídia paga escala por overlap e não substitui cadastro_site de agosto", async () => {
+    const august = parseDashboardFilters({ start: "2026-08-01", end: "2026-08-31" });
+    const full = parseDashboardFilters({ start: "2026-06-15", end: "2026-09-15" });
+    const none = parseDashboardFilters({ start: "2026-01-01", end: "2026-01-31" });
+    const paidAug = await service.getPaidMediaEvents(august);
+    const paidFull = await service.getPaidMediaEvents(full);
+    const paidNone = await service.getPaidMediaEvents(none);
+    const cadastro = (report: Awaited<ReturnType<typeof service.getPaidMediaEvents>>) =>
+      report.events.find((row) => row.event === "cadastro_site")?.current ?? 0;
+    expect(paidAug.overlapDays).toBe(31);
+    expect(paidFull.overlapDays).toBe(93);
+    expect(paidNone.overlapDays).toBe(0);
+    expect(cadastro(paidFull)).toBe(2791);
+    expect(cadastro(paidAug)).toBe(Math.round((2791 * 31) / 93));
+    expect(cadastro(paidNone)).toBe(0);
+    const kpis = await service.getOverviewKPIs(august);
+    expect(kpis.pageViews.value).toBeGreaterThan(1_000_000);
+  });
+
+  it("Google trimestral escala por overlap e não substitui gasto de agosto", async () => {
+    const august = parseDashboardFilters({ start: "2026-08-01", end: "2026-08-31" });
+    const full = parseDashboardFilters({ start: "2026-06-15", end: "2026-09-15" });
+    const none = parseDashboardFilters({ start: "2026-01-01", end: "2026-01-31" });
+    const googleAug = await service.getGoogleQuarterly(august);
+    const googleFull = await service.getGoogleQuarterly(full);
+    const googleNone = await service.getGoogleQuarterly(none);
+    expect(googleAug.overlapDays).toBe(31);
+    expect(googleFull.overlapDays).toBe(93);
+    expect(googleNone.overlapDays).toBe(0);
+    expect(googleFull.totals.spend.current).toBe(73905.51);
+    expect(googleAug.totals.spend.current).toBe(Math.round((73905.51 * 31) / 93 * 100) / 100);
+    const cards = await service.getCampaignScorecards(august);
+    const augustGoogle = cards.filter((row) => row.channel === "GOOGLE").reduce((sum, row) => sum + row.spend, 0);
+    expect(augustGoogle).toBeGreaterThan(0);
+    expect(augustGoogle).not.toBe(googleAug.totals.spend.current);
+    const metaOnly = await service.getGoogleQuarterly({ ...august, channel: "META" });
+    expect(metaOnly.campaigns).toHaveLength(0);
+  });
+
+  it("recomendações não inventam 8,5% Google vs GA4 e citam vendas Excel", async () => {
+    const recs = await service.getRecommendations();
+    const blob = recs.map((row) => `${row.title} ${row.reason}`).join(" ");
+    expect(blob).not.toMatch(/8[,.]5\s*%/);
+    expect(blob).toMatch(/148/);
+    const alerts = await service.getAlerts();
+    expect(alerts.some((row) => /Paid Search/i.test(row.description))).toBe(false);
   });
 });

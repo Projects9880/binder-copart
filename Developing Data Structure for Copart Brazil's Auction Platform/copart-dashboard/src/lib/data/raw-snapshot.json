@@ -1,17 +1,20 @@
 {
   "origin": "weekly_report",
-  "originLabel": "Meta + GA4 ago/2026 · Copart set/2026",
+  "originLabel": "Meta + GA4 ago/2026 · GA4/Google 15/06–15/09 · Copart set/2026",
   "mediaStart": "2026-08-01",
   "mediaEnd": "2026-08-31",
-  "copartStart": "2026-09-01",
-  "copartEnd": "2026-09-13",
+  "copartStart": "2026-08-30",
+  "copartEnd": "2026-09-14",
   "files": [
     "Copart-Boleto-Campaigns-Aug-1-2026-Aug-31-2026.csv",
     "Copart-Boleto-Ads-Aug-1-2026-Aug-31-2026.csv",
     "Performance do grupo de anúncios.csv",
     "Relatório de anúncios.csv",
     "Resumo_dos_relatórios.csv",
-    "copart_resultados_mensais.csv"
+    "download.csv",
+    "Google_Comparação_trimestral.csv",
+    "copart_resultados_mensais.csv",
+    "Dashboard_Leiloes_Vendas__Entrantes_e_Habilitados - Setembro.xlsx"
   ],
   "copartMonthly": [
     {
@@ -35,6 +38,410 @@
       "metaHabilitados": 11000,
       "atingimentoEntrantesPct": 38.62,
       "atingimentoHabilitadosPct": 41.24
+    }
+  ],
+  "copartDaily": [
+    {
+      "date": "2026-08-30",
+      "entrantes": 462,
+      "habilitados": 227
+    },
+    {
+      "date": "2026-08-31",
+      "entrantes": 705,
+      "habilitados": 426
+    },
+    {
+      "date": "2026-09-01",
+      "entrantes": 679,
+      "habilitados": 372
+    },
+    {
+      "date": "2026-09-02",
+      "entrantes": 698,
+      "habilitados": 365
+    },
+    {
+      "date": "2026-09-03",
+      "entrantes": 639,
+      "habilitados": 394
+    },
+    {
+      "date": "2026-09-04",
+      "entrantes": 498,
+      "habilitados": 289
+    },
+    {
+      "date": "2026-09-05",
+      "entrantes": 402,
+      "habilitados": 224
+    },
+    {
+      "date": "2026-09-06",
+      "entrantes": 468,
+      "habilitados": 210
+    },
+    {
+      "date": "2026-09-07",
+      "entrantes": 529,
+      "habilitados": 278
+    },
+    {
+      "date": "2026-09-08",
+      "entrantes": 628,
+      "habilitados": 398
+    },
+    {
+      "date": "2026-09-09",
+      "entrantes": 681,
+      "habilitados": 453
+    },
+    {
+      "date": "2026-09-10",
+      "entrantes": 654,
+      "habilitados": 412
+    },
+    {
+      "date": "2026-09-11",
+      "entrantes": 533,
+      "habilitados": 277
+    },
+    {
+      "date": "2026-09-12",
+      "entrantes": 448,
+      "habilitados": 214
+    },
+    {
+      "date": "2026-09-13",
+      "entrantes": 480,
+      "habilitados": 224
+    },
+    {
+      "date": "2026-09-14",
+      "entrantes": 672,
+      "habilitados": 441
+    }
+  ],
+  "copartByUf": [
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "SP",
+      "entrantes": 1231,
+      "habilitados": 1106
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "RJ",
+      "entrantes": 185,
+      "habilitados": 176
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "MG",
+      "entrantes": 231,
+      "habilitados": 211
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "PR",
+      "entrantes": 161,
+      "habilitados": 150
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "SC",
+      "entrantes": 61,
+      "habilitados": 60
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "RS",
+      "entrantes": 56,
+      "habilitados": 49
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "GO",
+      "entrantes": 113,
+      "habilitados": 116
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "BA",
+      "entrantes": 86,
+      "habilitados": 91
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "OUTROS",
+      "entrantes": 378,
+      "habilitados": 338
+    },
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "geo": "VAZIAS",
+      "entrantes": 1581,
+      "habilitados": 0
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "SP",
+      "entrantes": 1244,
+      "habilitados": 1094
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "RJ",
+      "entrantes": 193,
+      "habilitados": 184
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "MG",
+      "entrantes": 191,
+      "habilitados": 199
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "PR",
+      "entrantes": 139,
+      "habilitados": 129
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "SC",
+      "entrantes": 49,
+      "habilitados": 50
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "RS",
+      "entrantes": 39,
+      "habilitados": 34
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "GO",
+      "entrantes": 127,
+      "habilitados": 120
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "BA",
+      "entrantes": 89,
+      "habilitados": 93
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "OUTROS",
+      "entrantes": 393,
+      "habilitados": 339
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "geo": "VAZIAS",
+      "entrantes": 1478,
+      "habilitados": 0
+    }
+  ],
+  "selectWeekly": [
+    {
+      "week": "30/08–05/09",
+      "start": "2026-08-30",
+      "end": "2026-09-05",
+      "leads": 378,
+      "vendas": 59,
+      "entradas": 94
+    },
+    {
+      "week": "06/09–12/09",
+      "start": "2026-09-06",
+      "end": "2026-09-12",
+      "leads": 370,
+      "vendas": 89,
+      "entradas": 65
+    }
+  ],
+  "selectPageViews": [
+    {
+      "date": "2026-08-30",
+      "journey": "comprar",
+      "pageViews": 4861
+    },
+    {
+      "date": "2026-08-31",
+      "journey": "comprar",
+      "pageViews": 5987
+    },
+    {
+      "date": "2026-09-01",
+      "journey": "comprar",
+      "pageViews": 6062
+    },
+    {
+      "date": "2026-09-02",
+      "journey": "comprar",
+      "pageViews": 475
+    },
+    {
+      "date": "2026-09-03",
+      "journey": "comprar",
+      "pageViews": 682
+    },
+    {
+      "date": "2026-09-04",
+      "journey": "comprar",
+      "pageViews": 1393
+    },
+    {
+      "date": "2026-09-05",
+      "journey": "comprar",
+      "pageViews": 1012
+    },
+    {
+      "date": "2026-09-06",
+      "journey": "comprar",
+      "pageViews": 1033
+    },
+    {
+      "date": "2026-09-07",
+      "journey": "comprar",
+      "pageViews": 1282
+    },
+    {
+      "date": "2026-09-08",
+      "journey": "comprar",
+      "pageViews": 1495
+    },
+    {
+      "date": "2026-09-09",
+      "journey": "comprar",
+      "pageViews": 1557
+    },
+    {
+      "date": "2026-09-10",
+      "journey": "comprar",
+      "pageViews": 1511
+    },
+    {
+      "date": "2026-09-11",
+      "journey": "comprar",
+      "pageViews": 1326
+    },
+    {
+      "date": "2026-09-12",
+      "journey": "comprar",
+      "pageViews": 1008
+    },
+    {
+      "date": "2026-08-30",
+      "journey": "vender",
+      "pageViews": 1407
+    },
+    {
+      "date": "2026-08-31",
+      "journey": "vender",
+      "pageViews": 2155
+    },
+    {
+      "date": "2026-09-01",
+      "journey": "vender",
+      "pageViews": 2157
+    },
+    {
+      "date": "2026-09-02",
+      "journey": "vender",
+      "pageViews": 2143
+    },
+    {
+      "date": "2026-09-03",
+      "journey": "vender",
+      "pageViews": 1447
+    },
+    {
+      "date": "2026-09-04",
+      "journey": "vender",
+      "pageViews": 1413
+    },
+    {
+      "date": "2026-09-05",
+      "journey": "vender",
+      "pageViews": 1017
+    },
+    {
+      "date": "2026-09-06",
+      "journey": "vender",
+      "pageViews": 955
+    },
+    {
+      "date": "2026-09-07",
+      "journey": "vender",
+      "pageViews": 1023
+    },
+    {
+      "date": "2026-09-08",
+      "journey": "vender",
+      "pageViews": 1311
+    },
+    {
+      "date": "2026-09-09",
+      "journey": "vender",
+      "pageViews": 1309
+    },
+    {
+      "date": "2026-09-10",
+      "journey": "vender",
+      "pageViews": 1289
+    },
+    {
+      "date": "2026-09-11",
+      "journey": "vender",
+      "pageViews": 1135
+    },
+    {
+      "date": "2026-09-12",
+      "journey": "vender",
+      "pageViews": 758
     }
   ],
   "ga4": {
@@ -500,6 +907,496 @@
       "lead_vmc": 1796,
       "form_submit": 28
     }
+  },
+  "ga4PaidKeyEvents": {
+    "sourceFile": "download.csv",
+    "metric": "total_users",
+    "start": "2026-06-15",
+    "end": "2026-09-15",
+    "compareStart": "2026-03-14",
+    "compareEnd": "2026-06-14",
+    "days": 93,
+    "compareDays": 93,
+    "totalUsers": {
+      "current": 115620,
+      "previous": 74749
+    },
+    "rows": [
+      {
+        "channel": "Paid Search",
+        "event": "sign_in",
+        "current": 77211,
+        "previous": 44379
+      },
+      {
+        "channel": "Cross-network",
+        "event": "sign_in",
+        "current": 19584,
+        "previous": 22975
+      },
+      {
+        "channel": "Paid Search",
+        "event": "click_bid_now",
+        "current": 16848,
+        "previous": 9877
+      },
+      {
+        "channel": "Paid Other",
+        "event": "sign_in",
+        "current": 10084,
+        "previous": 0
+      },
+      {
+        "channel": "Cross-network",
+        "event": "click_bid_now",
+        "current": 3356,
+        "previous": 4885
+      },
+      {
+        "channel": "Paid Social",
+        "event": "sign_in",
+        "current": 1919,
+        "previous": 3488
+      },
+      {
+        "channel": "Paid Search",
+        "event": "cadastro_site",
+        "current": 2209,
+        "previous": 1828
+      },
+      {
+        "channel": "Paid Search",
+        "event": "register_to_bid",
+        "current": 1298,
+        "previous": 805
+      },
+      {
+        "channel": "Paid Other",
+        "event": "click_bid_now",
+        "current": 2071,
+        "previous": 0
+      },
+      {
+        "channel": "Cross-network",
+        "event": "cadastro_site",
+        "current": 542,
+        "previous": 1140
+      },
+      {
+        "channel": "Paid Search",
+        "event": "lead_vmc",
+        "current": 655,
+        "previous": 576
+      },
+      {
+        "channel": "Cross-network",
+        "event": "register_to_bid",
+        "current": 285,
+        "previous": 461
+      },
+      {
+        "channel": "Cross-network",
+        "event": "lead_vmc",
+        "current": 236,
+        "previous": 320
+      },
+      {
+        "channel": "Paid Other",
+        "event": "register_to_bid",
+        "current": 206,
+        "previous": 0
+      },
+      {
+        "channel": "Paid Social",
+        "event": "cadastro_site",
+        "current": 31,
+        "previous": 13
+      },
+      {
+        "channel": "Paid Social",
+        "event": "lead_vmc",
+        "current": 2,
+        "previous": 42
+      },
+      {
+        "channel": "Paid Social",
+        "event": "click_bid_now",
+        "current": 3,
+        "previous": 9
+      },
+      {
+        "channel": "Paid Other",
+        "event": "cadastro_site",
+        "current": 9,
+        "previous": 0
+      },
+      {
+        "channel": "Paid Other",
+        "event": "lead_vmc",
+        "current": 4,
+        "previous": 0
+      },
+      {
+        "channel": "Cross-network",
+        "event": "form_submit",
+        "current": 1,
+        "previous": 1
+      },
+      {
+        "channel": "Paid Search",
+        "event": "form_submit",
+        "current": 1,
+        "previous": 1
+      },
+      {
+        "channel": "Paid Social",
+        "event": "register_to_bid",
+        "current": 0,
+        "previous": 1
+      }
+    ]
+  },
+  "googleQuarterly": {
+    "sourceFile": "Google_Comparação_trimestral.csv",
+    "start": "2026-06-15",
+    "end": "2026-09-15",
+    "compareStart": "2026-03-14",
+    "compareEnd": "2026-06-14",
+    "days": 93,
+    "compareDays": 93,
+    "totals": {
+      "spend": {
+        "current": 73905.51,
+        "previous": 70470.0
+      },
+      "conversions": {
+        "current": 6304.03,
+        "previous": 6779.7
+      },
+      "clicks": {
+        "current": 1119778,
+        "previous": 807892
+      },
+      "impressions": {
+        "current": 4872380,
+        "previous": 3579302
+      }
+    },
+    "byType": [
+      {
+        "label": "Pesquisa",
+        "spend": {
+          "current": 37259.88,
+          "previous": 28639.3
+        },
+        "conversions": {
+          "current": 4450.28,
+          "previous": 3973.7
+        },
+        "clicks": {
+          "current": 868385,
+          "previous": 462781
+        }
+      },
+      {
+        "label": "Performance Max",
+        "spend": {
+          "current": 19747.95,
+          "previous": 26292.93
+        },
+        "conversions": {
+          "current": 1210.05,
+          "previous": 2506.54
+        },
+        "clicks": {
+          "current": 183318,
+          "previous": 319444
+        }
+      },
+      {
+        "label": "Geração de demanda",
+        "spend": {
+          "current": 16897.68,
+          "previous": 15537.77
+        },
+        "conversions": {
+          "current": 643.7,
+          "previous": 299.47
+        },
+        "clicks": {
+          "current": 68075,
+          "previous": 25667
+        }
+      }
+    ],
+    "campaigns": [
+      {
+        "name": "LEILÃO | PESQUISA | CONVERSÃO | MEIO | LEILÃO INSTITUCIONAL | 25.09.24 +",
+        "status": "Ativada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 32871.39,
+        "spendPrev": 6641.76,
+        "conversions": 3713.42,
+        "conversionsPrev": 1773.2,
+        "clicks": 799802,
+        "clicksPrev": 231304,
+        "impressions": 1614662,
+        "impressionsPrev": 441277
+      },
+      {
+        "name": "LEILÃO | PERFORMANCE MAX | LEADS | FUNDO | LEILÕES | 25.09.24 +",
+        "status": "Pausada",
+        "campaignType": "Performance Max",
+        "unit": "leilao_compra",
+        "spend": 10768.74,
+        "spendPrev": 17042.74,
+        "conversions": 652.32,
+        "conversionsPrev": 1849.76,
+        "clicks": 50189,
+        "clicksPrev": 175025,
+        "impressions": 522258,
+        "impressionsPrev": 693206
+      },
+      {
+        "name": "VENDA DIRETA | GERAÇÃO DE DEMANDA | RECONHECIMENTO | TOPO | COMPRA E VENDA | 09.02.26 %",
+        "status": "Ativada",
+        "campaignType": "Geração de demanda",
+        "unit": "select_mix",
+        "spend": 8346.08,
+        "spendPrev": 2777.91,
+        "conversions": 430.55,
+        "conversionsPrev": 34.28,
+        "clicks": 43809,
+        "clicksPrev": 8021,
+        "impressions": 1118594,
+        "impressionsPrev": 408928
+      },
+      {
+        "name": "VENDA DIRETA | GERAÇÃO DE DEMANDA | LEADS | REMARKETING | COMPRA E VENDA | 09.02.26 %",
+        "status": "Ativada",
+        "campaignType": "Geração de demanda",
+        "unit": "select_mix",
+        "spend": 4652.38,
+        "spendPrev": 1299.55,
+        "conversions": 168.04,
+        "conversionsPrev": 44.93,
+        "clicks": 18457,
+        "clicksPrev": 3543,
+        "impressions": 496986,
+        "impressionsPrev": 250065
+      },
+      {
+        "name": "VENDA DIRETA | PESQUISA | LEADS | FUNDO | VENDA | 09.02.26 %",
+        "status": "Ativada",
+        "campaignType": "Pesquisa",
+        "unit": "select_venda",
+        "spend": 3341.42,
+        "spendPrev": 7767.85,
+        "conversions": 76.5,
+        "conversionsPrev": 182.63,
+        "clicks": 4707,
+        "clicksPrev": 4990,
+        "impressions": 55215,
+        "impressionsPrev": 64616
+      },
+      {
+        "name": "BINDER | LEILÃO | PERFORMANCE MAX | LEADS | FUNDO | LEILÕES | 14.08.26",
+        "status": "Ativada",
+        "campaignType": "Performance Max",
+        "unit": "leilao_compra",
+        "spend": 2943.94,
+        "spendPrev": 0.0,
+        "conversions": 120.32,
+        "conversionsPrev": 0.0,
+        "clicks": 18375,
+        "clicksPrev": 0,
+        "impressions": 211828,
+        "impressionsPrev": 0
+      },
+      {
+        "name": "VENDA DIRETA | PERFORMANCE MAX | LEADS | FUNDO | VENDA | 09.02.26 %",
+        "status": "Pausada",
+        "campaignType": "Performance Max",
+        "unit": "select_venda",
+        "spend": 2744.37,
+        "spendPrev": 3142.65,
+        "conversions": 73.27,
+        "conversionsPrev": 34.79,
+        "clicks": 16803,
+        "clicksPrev": 15994,
+        "impressions": 166158,
+        "impressionsPrev": 85793
+      },
+      {
+        "name": "INSTITUCIONAL | PMAX| LEADS | MEIO | INSTITUCIONAL | 23.02.26 @",
+        "status": "Ativada",
+        "campaignType": "Performance Max",
+        "unit": "leilao_compra",
+        "spend": 2638.2,
+        "spendPrev": 2959.04,
+        "conversions": 356.91,
+        "conversionsPrev": 562.33,
+        "clicks": 92261,
+        "clicksPrev": 103488,
+        "impressions": 264467,
+        "impressionsPrev": 229547
+      },
+      {
+        "name": "LEILÃO | DMG | LEADS | FUNDO | RMKT | 23.02.26 +",
+        "status": "Pausada",
+        "campaignType": "Geração de demanda",
+        "unit": "leilao_compra",
+        "spend": 2619.66,
+        "spendPrev": 2802.73,
+        "conversions": 27.16,
+        "conversionsPrev": 71.18,
+        "clicks": 3103,
+        "clicksPrev": 2417,
+        "impressions": 181502,
+        "impressionsPrev": 307235
+      },
+      {
+        "name": "LEILÃO | GERAÇÃO DE DEMANDA | RECONHECIMENTO | TOPO | LEILÃO | 12.03.25 +",
+        "status": "Pausada",
+        "campaignType": "Geração de demanda",
+        "unit": "leilao_compra",
+        "spend": 1279.56,
+        "spendPrev": 5899.85,
+        "conversions": 17.94,
+        "conversionsPrev": 66.08,
+        "clicks": 2706,
+        "clicksPrev": 9328,
+        "impressions": 44987,
+        "impressionsPrev": 229313
+      },
+      {
+        "name": "INSTITUCIONAL | PESQUISA | LEADS | MEIO | INSTITUCIONAL | 23.05.24 |",
+        "status": "Pausada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 530.28,
+        "spendPrev": 2065.23,
+        "conversions": 619.95,
+        "conversionsPrev": 1978.21,
+        "clicks": 55650,
+        "clicksPrev": 214704,
+        "impressions": 118251,
+        "impressionsPrev": 332576
+      },
+      {
+        "name": "BINDER | LEILÃO | PESQUISA | CONVERSÃO | MEIO | LEILÃO GOIÂNIA | 19-08-2026",
+        "status": "Ativada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 516.78,
+        "spendPrev": 0.0,
+        "conversions": 40.42,
+        "conversionsPrev": 0.0,
+        "clicks": 8226,
+        "clicksPrev": 0,
+        "impressions": 33300,
+        "impressionsPrev": 0
+      },
+      {
+        "name": "BINDER | VENDA DIRETA | PERFORMANCE MAX | LEADS | FUNDO | VENDA | 14.08.26",
+        "status": "Ativada",
+        "campaignType": "Performance Max",
+        "unit": "select_venda",
+        "spend": 405.42,
+        "spendPrev": 0.0,
+        "conversions": 3.22,
+        "conversionsPrev": 0.0,
+        "clicks": 3366,
+        "clicksPrev": 0,
+        "impressions": 30174,
+        "impressionsPrev": 0
+      },
+      {
+        "name": "VENDA DIRETA | PERFORMANCE MAX | LEADS | FUNDO | COMPRA | 09.02.26 %",
+        "status": "Pausada",
+        "campaignType": "Performance Max",
+        "unit": "select_compra",
+        "spend": 247.28,
+        "spendPrev": 3148.49,
+        "conversions": 4.0,
+        "conversionsPrev": 59.65,
+        "clicks": 2324,
+        "clicksPrev": 24937,
+        "impressions": 13998,
+        "impressionsPrev": 120655
+      },
+      {
+        "name": "INSTITUCIONAL | DMG | LEADS | MEIO | INSTITUCIONAL | 23.02.26 @",
+        "status": "Pausada",
+        "campaignType": "Geração de demanda",
+        "unit": "leilao_compra",
+        "spend": 0.0,
+        "spendPrev": 2757.73,
+        "conversions": 0.0,
+        "conversionsPrev": 83.01,
+        "clicks": 0,
+        "clicksPrev": 2358,
+        "impressions": 0,
+        "impressionsPrev": 350188
+      },
+      {
+        "name": "INSTITUCIONAL | PESQUISA | LEADS | FUNDO | TERMOS RELACIONADOS | 22.01.26 @",
+        "status": "Pausada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 0.0,
+        "spendPrev": 373.0,
+        "conversions": 0.0,
+        "conversionsPrev": 8.91,
+        "clicks": 0,
+        "clicksPrev": 2655,
+        "impressions": 0,
+        "impressionsPrev": 22442
+      },
+      {
+        "name": "LEILÃO | PESQUISA | LEADS | KW: TERMOS GERAIS | 25/09/24 +",
+        "status": "Pausada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 0.0,
+        "spendPrev": 7996.35,
+        "conversions": 0.0,
+        "conversionsPrev": 15.0,
+        "clicks": 0,
+        "clicksPrev": 3964,
+        "impressions": 0,
+        "impressionsPrev": 11223
+      },
+      {
+        "name": "LEILÃO | PESQUISA | LEADS | KW: LEILÃO ESPECIFICO | 13/03/26 +",
+        "status": "Pausada",
+        "campaignType": "Pesquisa",
+        "unit": "leilao_compra",
+        "spend": 0.0,
+        "spendPrev": 3414.93,
+        "conversions": 0.0,
+        "conversionsPrev": 12.76,
+        "clicks": 0,
+        "clicksPrev": 3761,
+        "impressions": 0,
+        "impressionsPrev": 24762
+      },
+      {
+        "name": "VENDA DIRETA | PESQUISA | LEADS | FUNDO | COMPRA | 09.02.26 %",
+        "status": "Pausada",
+        "campaignType": "Pesquisa",
+        "unit": "select_compra",
+        "spend": 0.0,
+        "spendPrev": 380.17,
+        "conversions": 0.0,
+        "conversionsPrev": 3.0,
+        "clicks": 0,
+        "clicksPrev": 1403,
+        "impressions": 0,
+        "impressionsPrev": 7476
+      }
+    ]
   },
   "campaigns": [
     {

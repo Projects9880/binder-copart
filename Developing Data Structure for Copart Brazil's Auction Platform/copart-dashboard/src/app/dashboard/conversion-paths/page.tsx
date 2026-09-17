@@ -30,11 +30,12 @@ export default async function ConversionPathsPage({
     <>
       <PageHeader
         title="Jornada de Conversão"
-        subtitle="Padrões, habilitados e participação de canal no recorte"
-        badge="Executivo"
-        badgeColor="#153a73"
+        subtitle="Mockup — first-touch GA4 agregado. Sem reconstrução de touchpoints."
+        badge="Mockup"
+        badgeColor="#c77a00"
       />
       <PageContent>
+        <p className="text-[10px] font-black uppercase tracking-widest text-[#c77a00] mb-4">Mockup — first/last/linear não são medidos</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Jornadas", value: formatNumberFull(insights.totalJourneys) },
