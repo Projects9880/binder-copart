@@ -67,7 +67,7 @@ export const CAMPAIGN_TYPE_LABELS: Record<BusinessUnit, string> = {
 };
 
 export const STATUS_CONFIG = {
-  on_target: { label: "No alvo", icon: "ok", color: COLORS.green, bg: "#e8f8ef" },
+  on_target: { label: "Na meta", icon: "ok", color: COLORS.green, bg: "#e8f8ef" },
   below_target: { label: "Abaixo da meta", icon: "warn", color: COLORS.amber, bg: "#fff4df" },
   critical: { label: "Crítico", icon: "crit", color: COLORS.red, bg: "#fdecee" },
 } as const;
@@ -142,33 +142,26 @@ export const GEO_WEIGHTS: Record<string, number> = {
 
 export const ATTRIBUTION_GLOSSARY = [
   {
-    term: "Contribuição por etapa",
+    term: "Rateio por gasto",
     definition:
-      "Quantas conversões de cada etapa do funil a campanha ajudou a gerar no recorte selecionado. Métrica principal desta tela.",
+      "O funil da unidade é fatiado na proporção do spend (ou do resultado nativo) de cada campanha. Não é jornada individual nem modelo first/last/linear.",
   },
   {
-    term: "Primeiro toque",
-    definition: "Canal ou campanha do primeiro touchpoint conhecido da jornada.",
+    term: "Resultado nativo",
+    definition:
+      "O número que a conta de mídia reporta: cadastro no pixel Meta, conversões Google Ads ou conversas WhatsApp. Não é Entrante Copart.",
   },
   {
-    term: "Último toque",
-    definition: "Canal ou campanha imediatamente anterior à conversão.",
+    term: "Entrante Copart",
+    definition: "Cadastro oficial no Excel Copart. Só aparece no funil quando o recorte pega essa série.",
   },
   {
-    term: "Linear",
-    definition: "Crédito dividido igualmente entre os touchpoints da jornada.",
+    term: "Cadastro GA4 (evento)",
+    definition: "Contagem do evento cadastro_site no Resumo GA4 de agosto, site inteiro.",
   },
   {
-    term: "Decaimento temporal",
-    definition: "Crédito maior para os toques mais próximos da conversão.",
-  },
-  {
-    term: "Atribuição confiável",
-    definition: "Conversão com campanha e UTM válidos.",
-  },
-  {
-    term: "Atribuição questionável",
-    definition: "UTM inválido, campanha nula ou dados incompletos.",
+    term: "Cadastro pago (usuário)",
+    definition: "Usuários em canais pagos na extração 15/06–15/09, escalados ao recorte. Não soma com o evento de agosto.",
   },
 ] as const;
 
@@ -202,14 +195,13 @@ export const NAV_ITEMS = {
     { label: "Visão Geral", href: "/dashboard", icon: "LayoutDashboard" },
     { label: "Funil de Leilão", href: "/dashboard/funnel", icon: "Filter" },
     { label: "Copart Select", href: "/dashboard/direct-sales", icon: "MessageCircle" },
-    { label: "Atribuição", href: "/dashboard/attribution", icon: "GitBranch" },
     { label: "Metas por Canal", href: "/dashboard/channel-goals", icon: "Target" },
-    { label: "Jornada de Conversão", href: "/dashboard/conversion-paths", icon: "Route" },
+    { label: "Canais de origem", href: "/dashboard/conversion-paths", icon: "Route" },
     { label: "Análise Regional", href: "/dashboard/regional", icon: "Map" },
     { label: "Evolução", href: "/dashboard/evolution", icon: "TrendingUp" },
   ],
   operacional: [
-    { label: "Performance Diária", href: "/dashboard/campaigns", icon: "BarChart3" },
+    { label: "Scorecard de campanhas", href: "/dashboard/campaigns", icon: "BarChart3" },
     { label: "Campanhas Leilão", href: "/dashboard/auction-campaigns", icon: "Gavel" },
     { label: "Campanhas Select", href: "/dashboard/direct-campaigns", icon: "ShoppingCart" },
     { label: "Alertas", href: "/dashboard/alerts", icon: "AlertTriangle" },

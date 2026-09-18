@@ -51,10 +51,10 @@ export default async function OverviewPage({
     }));
 
   const kpiList = [
-    { key: "pageViews", data: kpis.pageViews, insights: ["Site inteiro no recorte — detalhe no Funil de Leilão"] },
-    { key: "visitantesUnicos", data: kpis.visitantesUnicos, insights: ["Usuários únicos no recorte"] },
-    { key: "logins", data: kpis.logins, insights: ["Login GA4 — jornada de Leilão aprofunda o dado"] },
-    { key: "registrationStart", data: kpis.registrationStart, insights: ["Início de cadastro GA4. Distinto de Entrante Copart."] },
+    { key: "pageViews", data: kpis.pageViews, insights: ["Evento page_view, site inteiro — detalhe no Funil de Leilão"] },
+    { key: "visitantesUnicos", data: kpis.visitantesUnicos, insights: ["Usuários ativos GA4 (BR) no recorte — não é visitante de leilão"] },
+    { key: "logins", data: kpis.logins, insights: ["Contagem de eventos sign_in no Resumo GA4 de agosto. Distinto dos usuários com login na extração paga."] },
+    { key: "registrationStart", data: kpis.registrationStart, insights: ["Início de cadastro GA4. Distinto de Entrante Copart e de cadastro_site."] },
   ];
 
   const mixColors = ["#8c5be8", "#00a85a", "#cf3044", "#6c7685"];

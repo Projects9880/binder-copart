@@ -128,7 +128,7 @@ def result_type(indicator: str) -> str:
 
 
 def parse_meta() -> list[dict]:
-    path = next(RAW.glob("Copart-Boleto-Campaigns*.csv"))
+    path = find_raw("meta-ads_campanhas")
     campaigns = []
     with path.open(encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle):
@@ -163,7 +163,7 @@ def parse_meta() -> list[dict]:
 
 
 def parse_google() -> list[dict]:
-    path = find_raw("performance")
+    path = find_raw("google-ads_grupos")
     lines = path.read_text(encoding="utf-8").splitlines()
     reader = csv.DictReader(lines[2:])
     campaigns = []
@@ -215,7 +215,7 @@ def classify_google_campaign(name: str) -> str:
 
 def parse_google_quarterly() -> dict | None:
     try:
-        path = find_raw("comparacao", "trimestral")
+        path = find_raw("google-ads_campanhas-trimestral")
     except FileNotFoundError:
         return None
     lines = path.read_text(encoding="utf-8-sig").splitlines()
@@ -308,7 +308,7 @@ def parse_google_quarterly() -> dict | None:
 
 
 def parse_copart() -> list[dict]:
-    path = RAW / "copart_resultados_mensais.csv"
+    path = find_raw("copart_resultados-mensais")
     rows = []
     with path.open(encoding="utf-8-sig", newline="") as handle:
         for row in csv.DictReader(handle):
@@ -329,7 +329,7 @@ def parse_copart() -> list[dict]:
 
 
 def parse_meta_ads() -> list[dict]:
-    path = next(RAW.glob("Copart-Boleto-Ads*.csv"))
+    path = find_raw("meta-ads_anuncios_")
     merged: dict[tuple[str, str], dict] = {}
     with path.open(encoding="utf-8", newline="") as handle:
         for index, row in enumerate(csv.DictReader(handle)):
@@ -395,7 +395,7 @@ def parse_meta_ads() -> list[dict]:
 
 
 def parse_google_ads() -> list[dict]:
-    path = find_raw("relatorio", "anuncios")
+    path = find_raw("google-ads_anuncios")
     lines = path.read_text(encoding="utf-8").splitlines()
     reader = csv.DictReader(lines[2:])
     ads = []
@@ -447,8 +447,9 @@ def parse_google_ads() -> list[dict]:
 
 
 def parse_ga4_paid_download() -> dict | None:
-    path = RAW / "download.csv"
-    if not path.exists():
+    try:
+        path = find_raw("ga4_eventos-midia-paga")
+    except FileNotFoundError:
         return None
     lines = [line.strip() for line in path.read_text(encoding="utf-8-sig").splitlines() if line.strip()]
     rows: list[dict] = []
@@ -504,7 +505,7 @@ def parse_ga4_paid_download() -> dict | None:
     flush()
 
     return {
-        "sourceFile": "download.csv",
+        "sourceFile": path.name,
         "metric": "total_users",
         "start": "2026-06-15",
         "end": "2026-09-15",
@@ -518,7 +519,7 @@ def parse_ga4_paid_download() -> dict | None:
 
 
 def parse_ga4() -> dict:
-    path = next(RAW.glob("Resumo*.csv"))
+    path = find_raw("ga4_resumo")
     lines = path.read_text(encoding="utf-8").splitlines()
     sections: list[dict] = []
     current = None
@@ -591,7 +592,7 @@ def iso_date(value) -> str | None:
 def parse_copart_xlsx() -> dict:
     import pandas as pd
 
-    path = find_raw("Dashboard_Leiloes", "Entrantes")
+    path = find_raw("copart_dashboard-leiloes")
     daily_df = pd.read_excel(path, sheet_name="Entrantes e Habilitados", header=None)
     daily: list[dict] = []
     for _, row in daily_df.iterrows():
@@ -706,17 +707,9 @@ def main() -> None:
         "mediaEnd": "2026-08-31",
         "copartStart": daily[0]["date"] if daily else "2026-09-01",
         "copartEnd": daily[-1]["date"] if daily else "2026-09-13",
-        "files": [
-            "Copart-Boleto-Campaigns-Aug-1-2026-Aug-31-2026.csv",
-            "Copart-Boleto-Ads-Aug-1-2026-Aug-31-2026.csv",
-            "Performance do grupo de anúncios.csv",
-            "Relatório de anúncios.csv",
-            "Resumo_dos_relatórios.csv",
-            "download.csv",
-            "Google_Comparação_trimestral.csv",
-            "copart_resultados_mensais.csv",
-            "Dashboard_Leiloes_Vendas__Entrantes_e_Habilitados - Setembro.xlsx",
-        ],
+        "files": sorted(
+            p.name for p in RAW.iterdir() if p.suffix.lower() in {".csv", ".xlsx"}
+        ),
         "copartMonthly": parse_copart(),
         "copartDaily": excel["copartDaily"],
         "copartByUf": excel["copartByUf"],

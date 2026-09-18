@@ -81,14 +81,14 @@ export default async function ChannelGoalsPage({
         <SectionTitle>Progresso geral da unidade</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <GoalCard
-            title="Entrantes (meta oficial Copart)"
+            title={overall.entrantesTitle ?? "Entrantes Copart"}
             current={overall.entrantes.current}
             target={overall.entrantes.target}
             percentage={overall.entrantes.percentage}
             color="#153a73"
           />
           <GoalCard
-            title="Habilitados (meta oficial Copart)"
+            title={overall.habilitadosTitle ?? "Habilitados Copart"}
             current={overall.habilitados.current}
             target={overall.habilitados.target}
             percentage={overall.habilitados.percentage}
@@ -139,7 +139,7 @@ export default async function ChannelGoalsPage({
 
         <SectionTitle>
           Como cada canal contribui para a meta da unidade
-          <InfoTip text="A Copart não tem meta oficial por canal. Cada card mostra o cadastro alocado pelo first-touch GA4 como fatia da meta da unidade (20 mil entrantes)." />
+          <InfoTip text="A Copart não tem meta oficial por canal. Cada card usa o resultado nativo da fonte (pixel, conversão Google, first-touch, WhatsApp, RD) como fatia da meta da unidade — não é alvo do canal." />
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...withData, ...withoutData].map((goal) => (

@@ -6,15 +6,16 @@
   "copartStart": "2026-08-30",
   "copartEnd": "2026-09-14",
   "files": [
-    "Copart-Boleto-Campaigns-Aug-1-2026-Aug-31-2026.csv",
-    "Copart-Boleto-Ads-Aug-1-2026-Aug-31-2026.csv",
-    "Performance do grupo de anúncios.csv",
-    "Relatório de anúncios.csv",
-    "Resumo_dos_relatórios.csv",
-    "download.csv",
-    "Google_Comparação_trimestral.csv",
-    "copart_resultados_mensais.csv",
-    "Dashboard_Leiloes_Vendas__Entrantes_e_Habilitados - Setembro.xlsx"
+    "copart_dashboard-leiloes-entrantes-habilitados_2026-09.xlsx",
+    "copart_resultados-mensais_2025-09_2026-09.csv",
+    "ga4_eventos-midia-paga_2026-06-15_2026-09-15.csv",
+    "ga4_resumo_2026-08-01_2026-08-31.csv",
+    "google-ads_anuncios_2026-08-01_2026-08-31.csv",
+    "google-ads_campanhas-trimestral_2026-06-15_2026-09-15.csv",
+    "google-ads_grupos-de-anuncios_2026-08-01_2026-08-31.csv",
+    "meta-ads_anuncios-agrupados_2026-08-01_2026-08-31.csv",
+    "meta-ads_anuncios_2026-08-01_2026-08-31.csv",
+    "meta-ads_campanhas_2026-08-01_2026-08-31.csv"
   ],
   "copartMonthly": [
     {
@@ -909,7 +910,7 @@
     }
   },
   "ga4PaidKeyEvents": {
-    "sourceFile": "download.csv",
+    "sourceFile": "ga4_eventos-midia-paga_2026-06-15_2026-09-15.csv",
     "metric": "total_users",
     "start": "2026-06-15",
     "end": "2026-09-15",
@@ -1057,7 +1058,7 @@
     ]
   },
   "googleQuarterly": {
-    "sourceFile": "Google_Comparação_trimestral.csv",
+    "sourceFile": "google-ads_campanhas-trimestral_2026-06-15_2026-09-15.csv",
     "start": "2026-06-15",
     "end": "2026-09-15",
     "compareStart": "2026-03-14",

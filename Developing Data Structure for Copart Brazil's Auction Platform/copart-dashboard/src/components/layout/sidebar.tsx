@@ -4,14 +4,15 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Filter, MessageCircle, GitBranch,
+  LayoutDashboard, Filter, MessageCircle,
   BarChart3, Gavel, ShoppingCart, AlertTriangle, Lightbulb,
   ChevronRight, Target, Route, Map, TrendingUp, FileText, Images, Bot, Shield,
 } from "lucide-react";
+import { navHref } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 
 const icons = {
-  LayoutDashboard, Filter, MessageCircle, GitBranch, BarChart3, Gavel,
+  LayoutDashboard, Filter, MessageCircle, BarChart3, Gavel,
   ShoppingCart, AlertTriangle, Lightbulb, Target, Route, Map, TrendingUp,
   FileText, Images, Bot, Shield,
 };
@@ -23,9 +24,8 @@ const navGroups = [
       { label: "Visão Geral", href: "/dashboard", icon: "LayoutDashboard" },
       { label: "Funil de Leilão", href: "/dashboard/funnel", icon: "Filter" },
       { label: "Copart Select", href: "/dashboard/direct-sales", icon: "MessageCircle" },
-      { label: "Atribuição", href: "/dashboard/attribution", icon: "GitBranch" },
       { label: "Metas por Canal", href: "/dashboard/channel-goals", icon: "Target" },
-      { label: "Jornada de Conversão", href: "/dashboard/conversion-paths", icon: "Route" },
+      { label: "Canais de origem", href: "/dashboard/conversion-paths", icon: "Route" },
       { label: "Análise Regional", href: "/dashboard/regional", icon: "Map" },
       { label: "Evolução", href: "/dashboard/evolution", icon: "TrendingUp" },
     ],
@@ -33,7 +33,7 @@ const navGroups = [
   {
     label: "Operacional",
     items: [
-      { label: "Performance Diária", href: "/dashboard/campaigns", icon: "BarChart3" },
+      { label: "Scorecard de campanhas", href: "/dashboard/campaigns", icon: "BarChart3" },
       { label: "Campanhas Leilão", href: "/dashboard/auction-campaigns", icon: "Gavel" },
       { label: "Campanhas Select", href: "/dashboard/direct-campaigns", icon: "ShoppingCart" },
       { label: "Alertas", href: "/dashboard/alerts", icon: "AlertTriangle" },
@@ -77,7 +77,7 @@ function SidebarNav() {
               const isActive = item.href === "/dashboard"
                 ? pathname === "/dashboard"
                 : pathname.startsWith(item.href);
-              const href = query ? `${item.href}?${query}` : item.href;
+              const href = navHref(item.href, query);
               const upcoming = group.label === "Em breve";
               return (
                 <li key={item.href}>

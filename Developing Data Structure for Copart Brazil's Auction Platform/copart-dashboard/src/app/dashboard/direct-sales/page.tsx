@@ -1,5 +1,5 @@
 import { PageHeader, PageContent, SectionTitle, CardWrapper } from "@/components/layout/page-header";
-import { FunnelChart } from "@/components/charts/funnel-chart";
+import { FunnelChart, EstimatedStagesNote } from "@/components/charts/funnel-chart";
 import { SelectTwoPathFunnel } from "@/components/charts/select-two-path";
 import { ChannelPerformanceTable } from "@/components/tables/channel-performance-table";
 import { PaidMediaEvents } from "@/components/cards/paid-media-events";
@@ -29,7 +29,7 @@ export default async function CopartSelectPage({
     dataService.getGoogleQuarterly(filters),
   ]);
 
-  const captados = funnelVender.stages.at(-1)?.value ?? 0;
+  const captados = funnelVender.estimatedStages?.at(-1)?.value ?? 0;
   const vendidos = funnelComprar.stages.at(-1)?.value ?? 0;
   const showVenda = filters.campaignType !== "select_compra";
   const showCompra = filters.campaignType !== "select_venda";
@@ -38,7 +38,7 @@ export default async function CopartSelectPage({
     <>
       <PageHeader
         title="Copart Select"
-        subtitle="Jornadas e investimentos independentes — Venda e Compra não se somam"
+        subtitle="Venda e Compra não se somam — investimentos e resultados independentes"
         badge="Executivo Select"
         badgeColor="#00a85a"
         actions={<InfoTip text="Contato qualificado = veículo no perfil Select (RD Station ou Blip). Critério provisório até alinhamento Copart." />}
@@ -65,8 +65,9 @@ export default async function CopartSelectPage({
 
         <PaidMediaEvents
           report={paidEvents}
-          featured={["cadastro_site", "lead_vmc", "form_submit"]}
-          channelEvents={["cadastro_site", "lead_vmc"]}
+          featured={["lead_vmc", "form_submit"]}
+          channelEvents={["lead_vmc"]}
+          showSiteWideUsers={false}
         />
         <GoogleQuarterly report={googleQuarterly} units={["select_venda", "select_compra", "select_mix"]} />
 
@@ -79,9 +80,13 @@ export default async function CopartSelectPage({
                   sitePath={funnelVender.sitePath}
                   whatsappPath={funnelVender.whatsappPath}
                   joinStages={funnelVender.joinStages}
+                  estimatedStages={funnelVender.estimatedStages}
                 />
               ) : (
-                <FunnelChart stages={funnelVender.stages} primaryColor={COLORS.green} />
+                <>
+                  <FunnelChart stages={funnelVender.stages} primaryColor={COLORS.green} />
+                  <EstimatedStagesNote stages={funnelVender.estimatedStages ?? []} />
+                </>
               )}
             </CardWrapper>
           </div>
@@ -100,13 +105,13 @@ export default async function CopartSelectPage({
           {showVenda && (
             <div>
               <SectionTitle>Canais — Select/Venda</SectionTitle>
-              <ChannelPerformanceTable rows={perfVender} volumeLabel="Cliques" convertedLabel="Conversas" />
+              <ChannelPerformanceTable rows={perfVender} volumeLabel="Resultado da conta" convertedLabel="Avanço da conta" />
             </div>
           )}
           {showCompra && (
             <div>
               <SectionTitle>Canais — Select/Compra</SectionTitle>
-              <ChannelPerformanceTable rows={perfComprar} volumeLabel="Cliques" convertedLabel="Propostas" />
+              <ChannelPerformanceTable rows={perfComprar} volumeLabel="Resultado da conta" convertedLabel="Avanço da conta" />
             </div>
           )}
         </div>

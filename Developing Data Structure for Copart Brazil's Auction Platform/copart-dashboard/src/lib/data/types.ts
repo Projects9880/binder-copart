@@ -165,6 +165,7 @@ export interface FunnelData {
   sitePath?: FunnelStage[];
   whatsappPath?: FunnelStage[];
   joinStages?: FunnelStage[];
+  estimatedStages?: FunnelStage[];
 }
 
 export interface WeeklyRegistration {
@@ -184,6 +185,8 @@ export interface ChannelPerformance {
   custo_por_entrante: number;
   custo_por_habilitado: number;
   gasto: number;
+  volumeSource?: string;
+  convertedSource?: string;
 }
 
 export interface CampaignScorecard {
@@ -202,6 +205,8 @@ export interface CampaignScorecard {
   conversas: number | null;
   status: "on_target" | "below_target" | "critical";
   owner?: string;
+  resultLabel?: string;
+  nativeResults?: number;
 }
 
 export interface AttributionComparison {
@@ -304,6 +309,9 @@ export interface ChannelGoal {
   deltaType: "good" | "bad" | "neutral";
   hasData?: boolean;
   sourceNote?: string;
+  resultLabel?: string;
+  convertedLabel?: string;
+  progressCaption?: string;
 }
 
 export type TrafficMixId = "direct" | "organic" | "paid" | "other";
@@ -339,6 +347,8 @@ export interface MediaEfficiencyRow {
 export interface OverallGoalSummary {
   entrantes: ChannelGoalMetric;
   habilitados: ChannelGoalMetric;
+  entrantesTitle?: string;
+  habilitadosTitle?: string;
 }
 
 export interface ConversionTouchpoint {

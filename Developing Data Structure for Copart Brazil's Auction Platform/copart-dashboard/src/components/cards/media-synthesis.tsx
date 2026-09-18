@@ -52,7 +52,7 @@ export function MediaSynthesis({
         {!hidePaid && (
           <>
             <div className="rounded-xl bg-[#f4f7fb] px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Usuários GA4 pagos</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Usuários pagos (site)</p>
               <p className="text-xl font-black text-[#0b1f3a] mt-1">{formatNumberFull(paid.totalUsers.current)}</p>
               <p className={`text-xs font-bold mt-1 ${tone(paid.totalUsers.delta)}`}>
                 {paid.totalUsers.delta >= 0 ? "+" : ""}
@@ -61,7 +61,7 @@ export function MediaSynthesis({
             </div>
             {cadastro && (
               <div className="rounded-xl bg-[#f4f7fb] px-4 py-3">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Cadastro pago</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#6c7685]">Usuários com cadastro (pago)</p>
                 <p className="text-xl font-black text-[#0b1f3a] mt-1">{formatNumberFull(cadastro.current)}</p>
                 <p className={`text-xs font-bold mt-1 ${tone(cadastro.delta)}`}>
                   {cadastro.delta >= 0 ? "+" : ""}

@@ -52,7 +52,7 @@ export function DataSourceModal() {
             </span>
           </div>
           <p className="text-xs text-[#d9eaf5] leading-relaxed">
-            Números de mídia e site vêm dos CSVs de Meta Ads, Google Ads e GA4 (1–31/08/2026). Entrantes e habilitados oficiais vêm de copart_resultados_mensais (set/2025 fechado e set/2026 parcial até 13/09). Licitantes, arrematantes, captados e vendidos não vieram nesta carga e aparecem como estimado ou zero. BigQuery continua o destino da integração.
+            Números de mídia e site vêm dos CSVs de Meta Ads, Google Ads e GA4 (1–31/08/2026). Entrantes e habilitados oficiais vêm de copart_resultados-mensais (set/2025 fechado e set/2026 parcial até 13/09). Licitantes, arrematantes, captados e vendidos não vieram nesta carga e aparecem como estimado ou zero. BigQuery continua o destino da integração.
           </p>
         </div>
 
@@ -70,7 +70,7 @@ export function DataSourceModal() {
                 <span className="font-bold text-xs text-[#0b1f3a]">Google Ads & Meta Ads</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e8f8ef] text-[#007342]">✅ Alta Confiabilidade</span>
               </div>
-              <p className="text-[11px] text-[#6c7685]">CSV de campanhas e anúncios Meta (Boleto, ago/2026) e de grupos/anúncios Google Ads (ago/2026). Overlay trimestral (Google_Comparação_trimestral.csv, 15/06–15/09 vs 14/03–14/06) escala pelo overlap — não soma com o gasto de agosto.</p>
+              <p className="text-[11px] text-[#6c7685]">CSV de campanhas e anúncios Meta (Boleto, ago/2026) e de grupos/anúncios Google Ads (ago/2026). Overlay trimestral (google-ads_campanhas-trimestral, 15/06–15/09 vs 14/03–14/06) escala pelo overlap — não soma com o gasto de agosto.</p>
               <div className="flex items-center justify-between text-[10px] text-[#4a6080] font-semibold pt-1 border-t border-[#dfe6ee]">
                 <span>Ago: 01–31/08 · Trimestre: 15/06–15/09</span>
                 <span>Métricas: gasto, cliques, conversões</span>
@@ -83,7 +83,7 @@ export function DataSourceModal() {
                 <span className="font-bold text-xs text-[#0b1f3a]">Google Analytics 4 (GA4)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fff4df] text-[#8c5700]">⚠️ Média (Auditado)</span>
               </div>
-              <p className="text-[11px] text-[#6c7685]">Resumo GA4 ago/2026 (site inteiro) + download.csv de eventos principais de mídia paga (15/06–15/09 vs 14/03–14/06). O filtro escala a extração paga pelo overlap — não soma com o Resumo de agosto.</p>
+              <p className="text-[11px] text-[#6c7685]">Resumo GA4 ago/2026 (site inteiro) + ga4_eventos-midia-paga de eventos principais de mídia paga (15/06–15/09 vs 14/03–14/06). O filtro escala a extração paga pelo overlap — não soma com o Resumo de agosto.</p>
               <div className="flex items-center justify-between text-[10px] text-[#4a6080] font-semibold pt-1 border-t border-[#dfe6ee]">
                 <span>Resumo: 01–31/08 · Pago: 15/06–15/09</span>
                 <span>Sobreposição: 31 dias em agosto</span>
@@ -111,7 +111,7 @@ export function DataSourceModal() {
               </div>
               <p className="text-[11px] text-[#6c7685]">Planilha mensal: set/2025 fechado (18.983 / 11.000) e set/2026 parcial até 13/09 (7.337 / 4.536 vs metas 19.000 / 11.000). Sem licitantes nem arrematantes.</p>
               <div className="flex items-center justify-between text-[10px] text-[#4a6080] font-semibold pt-1 border-t border-[#dfe6ee]">
-                <span>Arquivo: copart_resultados_mensais.csv</span>
+                <span>Arquivo: copart_resultados-mensais_2025-09_2026-09.csv</span>
                 <span>Oficial para funil de negócio</span>
               </div>
             </div>

@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const STATUS_CONFIG = {
-  on_target: { label: "No alvo", icon: "ok", variant: "outline" as const, className: "text-[#007342] border-[#00a85a] bg-[#e8f8ef]" },
+  on_target: { label: "Na meta", icon: "ok", variant: "outline" as const, className: "text-[#007342] border-[#00a85a] bg-[#e8f8ef]" },
   below_target: { label: "Abaixo da meta", icon: "aviso", variant: "outline" as const, className: "text-[#8c5700] border-[#c77a00] bg-[#fff4df]" },
   critical: { label: "Crítico", icon: "crit", variant: "outline" as const, className: "text-[#b2162e] border-[#cf3044] bg-[#fdecee]" },
 };
@@ -36,17 +36,17 @@ export function CampaignTable({ data, showConversas = false }: CampaignTableProp
                 <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">CTR</TableHead>
               </>
             )}
-            <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Entrantes</TableHead>
+            <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Resultado da conta</TableHead>
             {showConversas ? (
-              <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Conversas</TableHead>
+              <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Conversas WhatsApp</TableHead>
             ) : (
               <>
-                <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Habilitados</TableHead>
-                <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Taxa Hab.</TableHead>
+                <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Hab. estimado</TableHead>
+                <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Taxa est.</TableHead>
               </>
             )}
             <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Gasto (R$)</TableHead>
-            <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Custo/Entr.</TableHead>
+            <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide text-right">Custo/resultado</TableHead>
             <TableHead className="text-[#0b1f3a] font-bold text-xs uppercase tracking-wide">Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -81,7 +81,10 @@ export function CampaignTable({ data, showConversas = false }: CampaignTableProp
                   </>
                 )}
                 <TableCell className="text-right font-bold text-sm text-[#0b1f3a]">
-                  {row.entrantes.toLocaleString("pt-BR")}
+                  {(row.nativeResults ?? row.entrantes).toLocaleString("pt-BR")}
+                  {row.resultLabel ? (
+                    <p className="text-[10px] font-medium text-[#6c7685]">{row.resultLabel}</p>
+                  ) : null}
                 </TableCell>
                 {showConversas ? (
                   <TableCell className="text-right font-bold text-sm text-[#0b1f3a]">

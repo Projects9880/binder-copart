@@ -89,8 +89,47 @@ export function filtersToQuery(filters: DashboardFilters): string {
   return params.toString();
 }
 
+export type UnitScope = "free" | "leilao" | "select";
+
+export function unitScopeForPath(pathname: string): UnitScope {
+  if (pathname.startsWith("/dashboard/funnel") || pathname.startsWith("/dashboard/auction-campaigns")) {
+    return "leilao";
+  }
+  if (pathname.startsWith("/dashboard/direct-sales") || pathname.startsWith("/dashboard/direct-campaigns")) {
+    return "select";
+  }
+  return "free";
+}
+
+export function coerceUnitForScope(scope: UnitScope, unit: string): CampaignType | "ALL" {
+  if (scope === "leilao") return "leilao_compra";
+  if (scope === "select") {
+    if (unit === "select_venda" || unit === "select_compra") return unit;
+    return "ALL";
+  }
+  return UNITS.includes(unit as CampaignType) ? (unit as CampaignType) : "ALL";
+}
+
+export function navHref(path: string, current: URLSearchParams | string): string {
+  const params = new URLSearchParams(typeof current === "string" ? current : current.toString());
+  const previous = params.get("unit") || "ALL";
+  const nextUnit = coerceUnitForScope(unitScopeForPath(path), previous);
+  if (nextUnit === "ALL") params.delete("unit");
+  else params.set("unit", nextUnit);
+  if (nextUnit !== previous) {
+    params.delete("funnel");
+    params.delete("campaign");
+  }
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 export function hrefWithFilters(path: string, filters: DashboardFilters): string {
-  const query = filtersToQuery(filters);
+  const scoped: DashboardFilters = {
+    ...filters,
+    campaignType: coerceUnitForScope(unitScopeForPath(path), filters.campaignType),
+  };
+  const query = filtersToQuery(scoped);
   return query ? `${path}?${query}` : path;
 }
 

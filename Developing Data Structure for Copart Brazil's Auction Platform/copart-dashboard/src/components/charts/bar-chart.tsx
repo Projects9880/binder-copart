@@ -25,6 +25,7 @@ interface BarChartProps {
   horizontal?: boolean;
   height?: number;
   stacked?: boolean;
+  onPointClick?: (label: string, shiftKey: boolean) => void;
 }
 
 const formatValue = (v: number, type?: string) => {
@@ -42,6 +43,7 @@ export function BarChart({
   horizontal = false,
   height = 260,
   stacked = false,
+  onPointClick,
 }: BarChartProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -68,6 +70,18 @@ export function BarChart({
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index" as const, intersect: false },
+    onHover: (event: { native?: Event | null }, elements: unknown[]) => {
+      const target = event.native?.target;
+      if (target instanceof HTMLElement && onPointClick) {
+        target.style.cursor = elements.length ? "pointer" : "default";
+      }
+    },
+    onClick: (event: { native?: Event | null }, elements: Array<{ index: number }>) => {
+      if (!onPointClick || elements.length === 0) return;
+      const native = event.native;
+      const shiftKey = native instanceof MouseEvent ? native.shiftKey : false;
+      onPointClick(labels[elements[0].index], shiftKey);
+    },
     plugins: {
       legend: {
         display: datasets.length > 1,

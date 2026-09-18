@@ -38,7 +38,6 @@ import type {
 import { coverageScale, overlapDays, parseDashboardFilters, scaleNumber, unitMatchesFunnel } from "@/lib/filters";
 import {
   GOALS,
-  LEILAO_FUNNEL_STAGES,
   MARKETING_CHANNEL_CONFIG,
   MEDIA_OWNER,
   SELECT_COMPRA_LAST_STAGE,
@@ -168,22 +167,6 @@ const GA4_CHANNEL_LABEL: Record<string, string> = {
   Email: "E-mail",
   Unassigned: "Não atribuído",
   "Organic Video": "Vídeo orgânico",
-};
-
-const FIRST_TOUCH_TO_UI: Record<string, string> = {
-  Direct: "Direto",
-  "Organic Search": "SEO",
-  "Paid Search": "Google Ads",
-  "Paid Social": "Meta Ads",
-  "Organic Social": "Instagram Orgânico",
-  Email: "RD Station",
-  Referral: "Referral",
-  Display: "Display",
-  "Cross-network": "Cross-network",
-  "Paid Other": "Outros pagos",
-  Unassigned: "Não atribuído",
-  "Organic Video": "Vídeo orgânico",
-  "AI Assistant": "Assistente de IA",
 };
 
 function mediaScale(filters: DashboardFilters): number {
@@ -345,13 +328,21 @@ function pctDelta(current: number, previous: number): number {
 }
 
 const PAID_EVENT_LABEL: Record<string, string> = {
-  cadastro_site: "Cadastro no site",
-  register_to_bid: "Registrar para lance",
-  click_bid_now: "Clique em dar lance",
-  sign_in: "Login",
-  lead_vmc: "Lead VMC",
-  form_submit: "Envio de formulário",
-  lead_lp: "Lead landing",
+  cadastro_site: "Usuários com cadastro (pago)",
+  register_to_bid: "Usuários que registraram para lance (pago)",
+  click_bid_now: "Usuários que clicaram em dar lance (pago)",
+  sign_in: "Usuários com login (pago)",
+  lead_vmc: "Usuários com lead VMC (pago)",
+  form_submit: "Usuários que enviaram formulário (pago)",
+  lead_lp: "Usuários com lead landing (pago)",
+};
+
+const ACCOUNT_RESULT_LABEL: Record<string, string> = {
+  cadastro: "Cadastro (pixel Meta)",
+  conversion: "Conversões Google Ads",
+  messaging: "Conversas WhatsApp",
+  landing: "Visualizações da landing",
+  link: "Cliques no anúncio",
 };
 
 const PAID_EVENT_ORDER = [
@@ -370,7 +361,9 @@ function channelRow(
   unit: RawCampaign["unit"],
   spend: number,
   entrantes: number,
-  habilitados: number
+  habilitados: number,
+  volumeSource: string,
+  convertedSource: string
 ): ChannelPerformance {
   return {
     channel,
@@ -378,10 +371,12 @@ function channelRow(
     unit,
     entrantes,
     habilitados,
-    taxa_habilitacao: entrantes === 0 ? 0 : (habilitados / entrantes) * 100,
+    taxa_habilitacao: entrantes === 0 || habilitados === 0 ? 0 : (habilitados / entrantes) * 100,
     custo_por_entrante: entrantes === 0 ? 0 : spend / entrantes,
     custo_por_habilitado: habilitados === 0 ? 0 : spend / habilitados,
     gasto: spend,
+    volumeSource,
+    convertedSource,
   };
 }
 
@@ -432,14 +427,14 @@ export class RawExportDataService extends MockDataService {
     const period = "carga ago/2026 — sem período anterior";
     return {
       pageViews: metric(eventCount("page_view") * scale, "Page Views", period),
-      visitantesUnicos: metric(unique, "Visitantes únicos", period),
-      novosUsuarios: metric(novos, "Novos usuários", period),
-      usuariosRetornantes: metric(Math.max(0, unique - novos), "Usuários retornantes", period),
+      visitantesUnicos: metric(unique, "Usuários ativos (BR)", period),
+      novosUsuarios: metric(novos, "Novos usuários (first-user)", period),
+      usuariosRetornantes: metric(Math.max(0, unique - novos), "Únicos − novos (derivado)", "não é returningUsers do GA4"),
       firstVisit: metric(eventCount("first_visit") * scale, "Primeira visita", "diagnóstico de site"),
-      logins: metric(eventCount("sign_in") * scale, "Logins", period),
+      logins: metric(eventCount("sign_in") * scale, "Eventos sign_in (GA4)", period),
       favoritados: metric(eventCount("add_watchlist") * scale, "Favoritos", "intenção de site"),
       sessoes: metric(sum(Object.values(rawSnapshot.ga4.sessionChannels)) * scale, "Sessões", period),
-      sessoesEngajadas: metric(eventCount("user_engagement") * scale, "Sessões engajadas", "eventos user_engagement"),
+      sessoesEngajadas: metric(eventCount("user_engagement") * scale, "Eventos user_engagement", "não é sessão engajada do GA4"),
       taxaRejeicao: {
         value: 0,
         formatted: "n/d",
@@ -471,22 +466,22 @@ export class RawExportDataService extends MockDataService {
     const vendasTarget = Math.round(GOALS.select_compra.vendas_semanal * 2);
     const goals: GoalProgress[] = [
       {
-        title: "Entrantes — Leilão/Compra",
+        title: hasCopart ? "Entrantes Copart — Leilão/Compra" : "Cadastro GA4 (evento) — proxy da meta de entrantes",
         current: hasCopart ? copart.entrantes : scaleNumber(cadastroSite(), m),
         target: metaE,
         percentage: (hasCopart ? copart.entrantes : scaleNumber(cadastroSite(), m)) / metaE * 100,
         delta: 0,
-        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "GA4 cadastro_site ago/2026",
+        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "Evento cadastro_site ago/2026 — não é Entrante Copart",
         deltaType: "neutral",
         unit: "leilao_compra",
       },
       {
-        title: "Habilitados — Leilão/Compra",
+        title: hasCopart ? "Habilitados Copart — Leilão/Compra" : "Habilitados (estimado) — taxa Copart set/2026",
         current: hasCopart ? copart.habilitados : scaleNumber(cadastroSite() * HIST_HAB_RATE, m),
         target: metaH,
         percentage: ((hasCopart ? copart.habilitados : scaleNumber(cadastroSite() * HIST_HAB_RATE, m)) / metaH) * 100,
         delta: 0,
-        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "estimado pela taxa Copart set/2026",
+        deltaLabel: hasCopart ? "Copart Excel (executado no recorte)" : "cadastro_site × 4.536/7.337 — não medido neste recorte",
         deltaType: "neutral",
         unit: "leilao_compra",
       },
@@ -590,19 +585,27 @@ export class RawExportDataService extends MockDataService {
       const licitantes = scaleNumber(habilitados * LICITANTE_RATE, 1);
       const arrematantes = scaleNumber(licitantes * ARREMATANTE_RATE, 1);
       const pageViews = scaleNumber(eventCount("page_view"), m);
+      const official = hasCopart
+        ? rateStages([
+            { label: "Entrantes Copart", value: entrantes, description: "Excel Copart — cadastro oficial da unidade" },
+            { label: "Habilitados Copart", value: habilitados, description: "Excel Copart — habilitação oficial da unidade" },
+          ])
+        : [
+            { label: "Cadastro GA4 (evento)", value: entrantes, description: "Evento cadastro_site ago/2026, site inteiro — não é Entrante Copart" },
+            { label: "Habilitados (estimado)", value: habilitados, description: "cadastro_site × taxa Copart 4.536/7.337 — não medido neste recorte" },
+          ];
       return {
         type: "leilao",
         title: "Funil Leilão",
         subtitle: hasCopart
-          ? "Page views GA4 (site) + Copart Excel — licitantes/arrematantes estimados"
-          : "Entrantes = GA4 cadastro_site ago/2026; habilitados pela taxa Copart; etapas finais estimadas",
+          ? "Etapas oficiais do Excel Copart. Page views GA4 ficam no diagnóstico de site."
+          : "Recorte sem Excel Copart — cadastro GA4 como proxy. Licitantes e arrematantes não vieram nesta carga.",
         pageViews,
-        stages: rateStages([
-          { label: LEILAO_FUNNEL_STAGES[0], value: entrantes, description: hasCopart ? "Copart Excel" : "GA4 cadastro_site" },
-          { label: LEILAO_FUNNEL_STAGES[1], value: habilitados, description: hasCopart ? "Copart Excel" : "Estimado pela taxa Copart set/2026" },
-          { label: LEILAO_FUNNEL_STAGES[2], value: licitantes, description: "Estimado (40% dos habilitados) — não veio nesta carga" },
-          { label: LEILAO_FUNNEL_STAGES[3], value: arrematantes, description: "Estimado (45% dos licitantes) — não veio nesta carga" },
-        ]),
+        stages: official,
+        estimatedStages: [
+          { label: "Licitantes (estimado)", value: licitantes, description: "40% dos habilitados — não veio nesta carga" },
+          { label: "Arrematantes (estimado)", value: arrematantes, description: "45% dos licitantes — não veio nesta carga" },
+        ],
       };
     }
     if (type === "select_venda") {
@@ -617,7 +620,7 @@ export class RawExportDataService extends MockDataService {
       return {
         type: "select_venda",
         title: "Funil Select/Venda",
-        subtitle: "Dois caminhos (site e WhatsApp) se juntam em qualificados. Vistorias e captados estimados.",
+        subtitle: "Site e WhatsApp se juntam em qualificados. Vistorias e captados não vieram nesta carga.",
         sitePath: [
           { label: "Page views (vender)", value: pageViewsVender, description: "GA4 da aba Select no Excel Copart" },
           { label: "Cadastro / entradas", value: cadastroSitePath, description: "Entradas Copart Select no Excel" },
@@ -627,15 +630,15 @@ export class RawExportDataService extends MockDataService {
         ],
         joinStages: [
           { label: "Qualificados", value: qualificados, description: "Novos contatos de mensagem no Meta" },
-          { label: "Vistorias", value: vistorias, description: "Estimado — sem extração de vistoria" },
-          { label: SELECT_VENDA_LAST_STAGE, value: captados, description: "Estimado — sem extração de captados" },
+        ],
+        estimatedStages: [
+          { label: "Vistorias (estimado)", value: vistorias, description: "50% dos qualificados — sem extração de vistoria" },
+          { label: `${SELECT_VENDA_LAST_STAGE} (estimado)`, value: captados, description: "50% das vistorias — sem extração de captados" },
         ],
         stages: rateStages([
-          { label: "Page views (vender)", value: pageViewsVender || conversas, description: "Topo: site Excel ou conversas Meta" },
-          { label: "Conversas", value: conversas, description: "Mensagens iniciadas no Meta ([Whats][Vender])" },
+          { label: "Page views (vender)", value: pageViewsVender || conversas, description: "GA4 da aba Select no Excel Copart" },
+          { label: "Conversas WhatsApp", value: conversas, description: "Mensagens iniciadas no Meta ([Whats][Vender])" },
           { label: "Qualificados", value: qualificados, description: "Novos contatos de mensagem no Meta" },
-          { label: "Vistorias", value: vistorias, description: "Estimado — sem extração de vistoria nesta carga" },
-          { label: SELECT_VENDA_LAST_STAGE, value: captados, description: "Estimado — sem extração de captados nesta carga" },
         ]),
       };
     }
@@ -683,26 +686,98 @@ export class RawExportDataService extends MockDataService {
       const organicE = scaleNumber(cadastroSite() * organicShare, m);
       const directE = scaleNumber(cadastroSite() * directShare, m);
       table = [
-        channelRow("Meta Ads", "META", "leilao_compra", spendOf(meta), metaE, scaleNumber(metaE * HIST_HAB_RATE, 1)),
-        channelRow("Google Ads", "GOOGLE", "leilao_compra", spendOf(google), googleE, scaleNumber(googleE * HIST_HAB_RATE, 1)),
-        channelRow("Orgânico", "ORGANIC", "leilao_compra", 0, organicE, scaleNumber(organicE * HIST_HAB_RATE, 1)),
-        channelRow("Direto", "DIRECT", "leilao_compra", 0, directE, scaleNumber(directE * HIST_HAB_RATE, 1)),
+        channelRow(
+          "Meta Ads",
+          "META",
+          "leilao_compra",
+          spendOf(meta),
+          metaE,
+          scaleNumber(metaE * HIST_HAB_RATE, 1),
+          "Cadastro (pixel Meta)",
+          "Habilitados (estimado, taxa Copart)"
+        ),
+        channelRow(
+          "Google Ads",
+          "GOOGLE",
+          "leilao_compra",
+          spendOf(google),
+          googleE,
+          scaleNumber(googleE * HIST_HAB_RATE, 1),
+          "Conversões Google Ads",
+          "Habilitados (estimado, taxa Copart)"
+        ),
+        channelRow(
+          "Orgânico",
+          "ORGANIC",
+          "leilao_compra",
+          0,
+          organicE,
+          scaleNumber(organicE * HIST_HAB_RATE, 1),
+          "Cadastro GA4 × first-touch orgânico",
+          "Habilitados (estimado, taxa Copart)"
+        ),
+        channelRow(
+          "Direto",
+          "DIRECT",
+          "leilao_compra",
+          0,
+          directE,
+          scaleNumber(directE * HIST_HAB_RATE, 1),
+          "Cadastro GA4 × first-touch direto",
+          "Habilitados (estimado, taxa Copart)"
+        ),
       ].sort((a, b) => b.entrantes - a.entrantes);
     } else if (type === "select_venda") {
       const metaE = scaleNumber(messaging(meta) || sum(meta.map((row) => row.clicks)), m);
       const googleE = scaleNumber(conversions(google), m);
       const metaH = scaleNumber(sum(meta.map((row) => row.newConversas)), m);
       table = [
-        channelRow("Meta Ads", "META", "select_venda", spendOf(meta), metaE, metaH || scaleNumber(metaE * 0.8, 1)),
-        channelRow("Google Ads", "GOOGLE", "select_venda", spendOf(google), googleE, scaleNumber(googleE * 0.6, 1)),
+        channelRow(
+          "Meta Ads",
+          "META",
+          "select_venda",
+          spendOf(meta),
+          metaE,
+          metaH,
+          "Conversas WhatsApp (Meta)",
+          "Novos contatos (Meta)"
+        ),
+        channelRow(
+          "Google Ads",
+          "GOOGLE",
+          "select_venda",
+          spendOf(google),
+          googleE,
+          0,
+          "Conversões Google Ads",
+          "Sem avanço nativo nesta carga"
+        ),
       ];
     } else {
       const metaE = scaleNumber(sum(meta.map((row) => (row.resultType === "landing" || row.resultType === "link" ? row.results : 0))), m);
       const googleE = scaleNumber(sum(google.map((row) => row.clicks)), m);
       const metaH = scaleNumber(cadastros(meta), m);
       table = [
-        channelRow("Meta Ads", "META", "select_compra", spendOf(meta), metaE, metaH),
-        channelRow("Google Ads", "GOOGLE", "select_compra", spendOf(google), googleE, scaleNumber(conversions(google), m)),
+        channelRow(
+          "Meta Ads",
+          "META",
+          "select_compra",
+          spendOf(meta),
+          metaE,
+          metaH,
+          "Visualizações da landing (Meta)",
+          "Cadastro (pixel Meta)"
+        ),
+        channelRow(
+          "Google Ads",
+          "GOOGLE",
+          "select_compra",
+          spendOf(google),
+          googleE,
+          scaleNumber(conversions(google), m),
+          "Cliques Google Ads",
+          "Conversões Google Ads"
+        ),
       ];
     }
     if (filters.channel === "ALL") return table;
@@ -725,6 +800,7 @@ export class RawExportDataService extends MockDataService {
             ? scaleNumber(row.results, m)
             : 0;
         const conversas = row.resultType === "messaging" ? scaleNumber(row.results, m) : row.conversas ? scaleNumber(row.conversas, m) : null;
+        const nativeResults = scaleNumber(row.results, m);
         return {
           campaign_name: campaignLabel(row),
           channel: (row.source === "meta" ? "META" : "GOOGLE") as Channel,
@@ -737,10 +813,12 @@ export class RawExportDataService extends MockDataService {
           taxa_habilitacao: row.resultType === "cadastro" ? HIST_HAB_RATE * 100 : null,
           spend,
           cpc: clicks === 0 ? null : spend / clicks,
-          custo_por_entrante: entrantes === 0 ? 0 : spend / entrantes,
+          custo_por_entrante: nativeResults === 0 ? 0 : spend / nativeResults,
           conversas,
           status: campaignStatus(row),
           owner: MEDIA_OWNER,
+          resultLabel: ACCOUNT_RESULT_LABEL[row.resultType] ?? "Resultado da conta",
+          nativeResults,
         };
       })
       .sort((a, b) => b.spend - a.spend);
@@ -1114,6 +1192,8 @@ export class RawExportDataService extends MockDataService {
       overall: {
         entrantes: { current: overallEntrantes, target: metaE, percentage: (overallEntrantes / metaE) * 100 },
         habilitados: { current: overallHab, target: metaH, percentage: (overallHab / metaH) * 100 },
+        entrantesTitle: useCopart ? "Entrantes Copart" : "Cadastro GA4 (evento) — proxy da meta",
+        habilitadosTitle: useCopart ? "Habilitados Copart" : "Habilitados (estimado, taxa set/2026)",
       },
     };
   }
@@ -1121,18 +1201,17 @@ export class RawExportDataService extends MockDataService {
   async getConversionPaths(filters: ConversionPathFilters): Promise<ConversionPath[]> {
     const paths: ConversionPath[] = Object.entries(rawSnapshot.ga4.firstUserChannels)
       .sort((a, b) => b[1] - a[1])
-      .map(([source, count], index) => {
-        const label = FIRST_TOUCH_TO_UI[source] ?? GA4_CHANNEL_LABEL[source] ?? source;
+      .map(([source, count]) => {
+        const label = GA4_CHANNEL_LABEL[source] ?? source;
         return {
-          id: `GA4-${index + 1}`,
+          id: source,
           userId: "agregado-ga4",
           conversionType: "entrante" as const,
           conversionDate: "2026-08-31",
           touchpoints: [
             { channel: label, source, timestamp: "2026-08-01", type: "visit" as const },
-            { channel: "Entrante", source: "cadastro_site", timestamp: "2026-08-31", type: "conversion" as const },
           ],
-          totalTouchpoints: 2,
+          totalTouchpoints: 1,
           daysToConversion: 0,
           firstChannel: label,
           lastChannel: label,
@@ -1160,7 +1239,7 @@ export class RawExportDataService extends MockDataService {
     const cad = cadastroSite();
     const merged = new Map<string, { count: number; habilitados: number }>();
     for (const [source, count] of entries) {
-      const pattern = FIRST_TOUCH_TO_UI[source] ?? GA4_CHANNEL_LABEL[source] ?? source;
+      const pattern = GA4_CHANNEL_LABEL[source] ?? source;
       const share = count / total;
       const current = merged.get(pattern) ?? { count: 0, habilitados: 0 };
       current.count += Math.round(count);

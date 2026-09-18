@@ -5,22 +5,24 @@ import type { PaidMediaEventsReport } from "@/lib/data/types";
 const FEATURED = ["cadastro_site", "register_to_bid", "click_bid_now", "sign_in"];
 
 const CHANNEL_TITLE: Record<string, string> = {
-  cadastro_site: "Cadastro no site por canal pago",
-  register_to_bid: "Registrar para lance por canal pago",
-  click_bid_now: "Clique em dar lance por canal pago",
-  lead_vmc: "Lead VMC por canal pago",
-  form_submit: "Envio de formulário por canal pago",
-  sign_in: "Login por canal pago",
+  cadastro_site: "Usuários com cadastro (canal pago, site inteiro)",
+  register_to_bid: "Usuários que registraram para lance (canal pago)",
+  click_bid_now: "Usuários que clicaram em dar lance (canal pago)",
+  lead_vmc: "Usuários com lead VMC (canal pago)",
+  form_submit: "Usuários que enviaram formulário (canal pago)",
+  sign_in: "Usuários com login (canal pago)",
 };
 
 export function PaidMediaEvents({
   report,
   featured = FEATURED,
   channelEvents = ["cadastro_site"],
+  showSiteWideUsers = true,
 }: {
   report: PaidMediaEventsReport;
   featured?: string[];
   channelEvents?: string[];
+  showSiteWideUsers?: boolean;
 }) {
   if (report.overlapDays === 0 || report.events.length === 0) return null;
 
@@ -33,20 +35,24 @@ export function PaidMediaEvents({
         <div>
           <p className="text-sm font-black text-[#0b1f3a]">
             Mídia paga GA4
-            <InfoTip text="Usuários (não contagem de eventos) em canais pagos, extração 15/06–15/09 vs 14/03–14/06. O recorte do filtro escala pelo overlap com essa janela — não soma com o Resumo GA4 de agosto (cadastro_site 6.860 eventos, site inteiro)." />
+            <InfoTip text="Usuários (não contagem de eventos) em canais pagos, extração 15/06–15/09 vs 14/03–14/06. O recorte do filtro escala pelo overlap com essa janela — não soma com o evento cadastro_site de agosto (6.860, site inteiro) nem com Entrante Copart." />
           </p>
           <p className="text-[11px] text-[#6c7685] font-semibold">
             {report.overlapDays} de {report.sourceDays} dias da extração ({scalePct}) · vs trimestre anterior
           </p>
         </div>
-        <p className="text-[11px] font-bold text-[#6c7685]">
-          {formatNumberFull(report.totalUsers.current)} usuários
-          <span className={report.totalUsers.delta >= 0 ? " text-[#007342]" : " text-[#b2162e]"}>
-            {" "}
-            {report.totalUsers.delta >= 0 ? "+" : ""}
-            {formatPercentage(report.totalUsers.delta, 1)}
-          </span>
-        </p>
+        {showSiteWideUsers ? (
+          <p className="text-[11px] font-bold text-[#6c7685]">
+            {formatNumberFull(report.totalUsers.current)} usuários pagos (site)
+            <span className={report.totalUsers.delta >= 0 ? " text-[#007342]" : " text-[#b2162e]"}>
+              {" "}
+              {report.totalUsers.delta >= 0 ? "+" : ""}
+              {formatPercentage(report.totalUsers.delta, 1)}
+            </span>
+          </p>
+        ) : (
+          <p className="text-[11px] font-bold text-[#6c7685]">Eventos Select — sem o cadastro_site do Leilão</p>
+        )}
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {featuredRows.map((row) => (

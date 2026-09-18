@@ -67,7 +67,8 @@ export function AttributionGlossary() {
 
         <div className="flex items-center justify-between pt-2 border-t border-[#dfe6ee]">
           <span className="text-[11px] text-[#6c7685] font-medium flex items-center gap-1">
-            <Info className="w-3.5 h-3.5 text-[#00b8cf]" /> Contribuição por etapa é a métrica principal
+            <Info className="w-3.5 h-3.5 text-[#00b8cf]" />
+            Contribuição por etapa nesta tela é rateio por spend
           </span>
           <Button
             onClick={() => setIsOpen(false)}

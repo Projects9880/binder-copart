@@ -3,13 +3,11 @@ import { RawExportDataService } from "@/lib/data/raw-data";
 import { classifyCampaignUnit } from "@/lib/data/campaign-unit";
 import {
   FORBIDDEN_COPY,
-  LEILAO_FUNNEL_STAGES,
   SELECT_COMPRA_LAST_STAGE,
-  SELECT_VENDA_LAST_STAGE,
   USER_FACING_LABELS,
 } from "@/lib/constants";
 import { assertNoForbiddenCopy, isMonotonicFunnel, totalChannelPerformance } from "@/lib/aggregations";
-import { parseDashboardFilters } from "@/lib/filters";
+import { parseDashboardFilters, navHref, coerceUnitForScope, unitScopeForPath } from "@/lib/filters";
 
 const service = new RawExportDataService();
 
@@ -48,16 +46,37 @@ describe("classificação de campanha", () => {
 });
 
 describe("funis", () => {
-  it("Funil Leilão tem 4 etapas canônicas e é monotônico", async () => {
+  it("Funil Leilão separa etapas Copart das estimadas", async () => {
     const funnel = await service.getFunnelData("leilao", week);
-    expect(funnel.stages.map((s) => s.label)).toEqual([...LEILAO_FUNNEL_STAGES]);
+    expect(funnel.stages.map((s) => s.label)).toEqual([
+      "Cadastro GA4 (evento)",
+      "Habilitados (estimado)",
+    ]);
+    expect(funnel.estimatedStages?.map((s) => s.label)).toEqual([
+      "Licitantes (estimado)",
+      "Arrematantes (estimado)",
+    ]);
     expect(isMonotonicFunnel(funnel.stages)).toBe(true);
   });
 
-  it("Select termina em captados e vendidos", async () => {
+  it("Funil Leilão com Excel Copart usa etapas oficiais", async () => {
+    const copartRange = parseDashboardFilters({
+      start: "2026-08-30",
+      end: "2026-09-14",
+    });
+    const funnel = await service.getFunnelData("leilao", copartRange);
+    expect(funnel.stages.map((s) => s.label)).toEqual([
+      "Entrantes Copart",
+      "Habilitados Copart",
+    ]);
+    expect(isMonotonicFunnel(funnel.stages)).toBe(true);
+  });
+
+  it("Select oficial termina em qualificados; captados e vendidos ficam na fonte certa", async () => {
     const venda = await service.getFunnelData("select_venda", week);
     const compra = await service.getFunnelData("select_compra", week);
-    expect(venda.stages.at(-1)?.label).toBe(SELECT_VENDA_LAST_STAGE);
+    expect(venda.stages.at(-1)?.label).toBe("Qualificados");
+    expect(venda.estimatedStages?.at(-1)?.label).toContain("Captados");
     expect(compra.stages.at(-1)?.label).toBe(SELECT_COMPRA_LAST_STAGE);
     expect(isMonotonicFunnel(venda.stages)).toBe(true);
     expect(isMonotonicFunnel(compra.stages)).toBe(true);
@@ -324,5 +343,35 @@ describe("Excel Copart set/2026", () => {
     expect(blob).toMatch(/148/);
     const alerts = await service.getAlerts();
     expect(alerts.some((row) => /Paid Search/i.test(row.description))).toBe(false);
+  });
+});
+
+describe("seletor de unidade vs rota", () => {
+  it("páginas de funil/campanha Leilão travam o negócio em Leilão", () => {
+    expect(unitScopeForPath("/dashboard/funnel")).toBe("leilao");
+    expect(unitScopeForPath("/dashboard/auction-campaigns")).toBe("leilao");
+    expect(coerceUnitForScope("leilao", "select_venda")).toBe("leilao_compra");
+    expect(coerceUnitForScope("leilao", "ALL")).toBe("leilao_compra");
+  });
+
+  it("páginas Select não carregam Leilão e aceitam Venda, Compra ou os dois", () => {
+    expect(unitScopeForPath("/dashboard/direct-sales")).toBe("select");
+    expect(coerceUnitForScope("select", "leilao_compra")).toBe("ALL");
+    expect(coerceUnitForScope("select", "select_compra")).toBe("select_compra");
+  });
+
+  it("Visão Geral e Metas continuam livres", () => {
+    expect(unitScopeForPath("/dashboard")).toBe("free");
+    expect(unitScopeForPath("/dashboard/channel-goals")).toBe("free");
+    expect(coerceUnitForScope("free", "select_venda")).toBe("select_venda");
+  });
+
+  it("navegar da barra lateral corrige a unit da URL", () => {
+    const fromSelect = new URLSearchParams("unit=select_venda&start=2026-08-01");
+    expect(navHref("/dashboard/funnel", fromSelect)).toContain("unit=leilao_compra");
+    expect(navHref("/dashboard/funnel", fromSelect)).toContain("start=2026-08-01");
+    const fromLeilao = new URLSearchParams("unit=leilao_compra&end=2026-08-31");
+    expect(navHref("/dashboard/direct-sales", fromLeilao)).not.toContain("unit=");
+    expect(navHref("/dashboard", fromLeilao)).toContain("unit=leilao_compra");
   });
 });

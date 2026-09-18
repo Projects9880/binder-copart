@@ -6,10 +6,47 @@ interface ChannelGoalCardProps {
   className?: string;
 }
 
+const CHANNEL_COPY: Partial<Record<ChannelGoal["channel"], { result: string; converted: string; caption: string }>> = {
+  META_ADS: {
+    result: "Cadastro (pixel Meta)",
+    converted: "Habilitados (estimado)",
+    caption: "% da meta de entrantes da unidade — contribuição, não alvo do canal",
+  },
+  GOOGLE_ADS: {
+    result: "Conversões Google Ads",
+    converted: "Habilitados (estimado)",
+    caption: "% da meta de entrantes da unidade — contribuição, não alvo do canal",
+  },
+  SEO: {
+    result: "Cadastro GA4 alocado (first-touch)",
+    converted: "Habilitados (estimado)",
+    caption: "% da meta de entrantes da unidade — rateio, não Entrante Copart",
+  },
+  INSTAGRAM_ORGANIC: {
+    result: "Cadastro GA4 alocado (first-touch)",
+    converted: "Habilitados (estimado)",
+    caption: "% da meta de entrantes da unidade — rateio, não Entrante Copart",
+  },
+  RD_STATION: {
+    result: "Eventos de formulário RD",
+    converted: "Formulário embutido (GA4)",
+    caption: "% da meta de entrantes da unidade — não é lead CRM oficial",
+  },
+  BLIP: {
+    result: "Conversas WhatsApp",
+    converted: "Novos contatos",
+    caption: "% da meta semanal de conversas Select — não é a meta de 20 mil",
+  },
+};
+
 export function ChannelGoalCard({ goal, className }: ChannelGoalCardProps) {
   const entrantes = goal.metrics.entrantes;
   const habilitados = goal.metrics.habilitados;
   const hasData = goal.hasData !== false;
+  const copy = CHANNEL_COPY[goal.channel];
+  const resultLabel = goal.resultLabel ?? copy?.result ?? "Resultado nativo";
+  const convertedLabel = goal.convertedLabel ?? copy?.converted ?? "Avanço";
+  const progressCaption = goal.progressCaption ?? copy?.caption ?? "% da meta da unidade";
 
   return (
     <div
@@ -45,7 +82,7 @@ export function ChannelGoalCard({ goal, className }: ChannelGoalCardProps) {
           <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] uppercase tracking-[0.07em] font-bold text-[#6c7685]">
-                Resultado
+                {resultLabel}
               </span>
               <span className="text-xs font-bold text-[#0b1f3a]">
                 {entrantes.current.toLocaleString("pt-BR")}
@@ -61,13 +98,13 @@ export function ChannelGoalCard({ goal, className }: ChannelGoalCardProps) {
               />
             </div>
             <p className="text-[10px] font-bold text-[#6c7685] mt-0.5">
-              {entrantes.percentage.toFixed(1)}% da meta da unidade
+              {entrantes.percentage.toFixed(1)}% · {progressCaption.replace(/^%\s*/, "")}
             </p>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] uppercase tracking-[0.07em] font-bold text-[#6c7685]">
-                Habilitados / avançados
+                {convertedLabel}
               </span>
               <span className="text-xs font-bold text-[#0b1f3a]">
                 {habilitados.current.toLocaleString("pt-BR")}

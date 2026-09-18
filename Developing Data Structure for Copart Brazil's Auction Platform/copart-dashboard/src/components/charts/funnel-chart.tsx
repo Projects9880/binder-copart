@@ -8,6 +8,11 @@ interface FunnelChartProps {
   className?: string;
 }
 
+function isEstimated(stage: FunnelStage) {
+  const text = `${stage.label} ${stage.description ?? ""}`.toLowerCase();
+  return text.includes("estimado");
+}
+
 export function FunnelChart({
   stages,
   primaryColor = "#00b8cf",
@@ -24,10 +29,10 @@ export function FunnelChart({
       {stages.map((stage, i) => {
         const widthPct = (stage.value / max) * 100;
         const isLast = i === stages.length - 1;
+        const estimated = isEstimated(stage);
 
         return (
           <div key={`${stage.label}-${i}`} className="relative">
-            {/* Bar */}
             <div
               className="flex items-center gap-3 mx-auto transition-all duration-700"
               style={{ width: `${Math.max(widthPct, 30)}%` }}
@@ -51,8 +56,7 @@ export function FunnelChart({
               </div>
             </div>
 
-            {/* Arrow + conversion rate */}
-            {!isLast && stage.conversionRate !== undefined && (
+            {!isLast && !estimated && stage.conversionRate !== undefined && (
               <div className="flex items-center justify-center py-1 gap-2">
                 <div className="h-px flex-1 max-w-[200px] bg-[#dfe6ee]" />
                 <span className="text-xs font-black text-[#6c7685] flex items-center gap-1">
@@ -74,6 +78,28 @@ export function FunnelChart({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+export function EstimatedStagesNote({ stages }: { stages: FunnelStage[] }) {
+  if (!stages.length) return null;
+  return (
+    <div className="rounded-2xl border border-dashed border-[#dfe6ee] bg-[#fffaf0] p-4 mt-4">
+      <p className="text-[10px] uppercase tracking-widest font-bold text-[#c77a00] mb-3">
+        Não veio nesta carga — estimado
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {stages.map((stage) => (
+          <div key={stage.label}>
+            <p className="text-[11px] text-[#6c7685] font-semibold">{stage.label}</p>
+            <p className="text-lg font-black text-[#0b1f3a]">{stage.value.toLocaleString("pt-BR")}</p>
+            {stage.description ? (
+              <p className="text-[10px] text-[#6c7685] mt-0.5">{stage.description}</p>
+            ) : null}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
