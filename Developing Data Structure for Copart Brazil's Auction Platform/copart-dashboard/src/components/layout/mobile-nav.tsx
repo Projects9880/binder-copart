@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { LogOut } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { navHref } from "@/lib/filters";
 
 const links = [
@@ -22,11 +23,7 @@ const links = [
 export function MobileNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    setQuery(searchParams.toString());
-  }, [searchParams]);
+  const query = searchParams.toString();
 
   return (
     <div className="md:hidden overflow-x-auto border-b border-[#dfe6ee] bg-[#0b1f3a] px-3 py-2 flex gap-2">
@@ -45,6 +42,15 @@ export function MobileNav() {
           </Link>
         );
       })}
+      <form action={logout} className="ml-auto border-l border-white/10 pl-2">
+        <button
+          type="submit"
+          aria-label="Sair do dashboard"
+          className="flex size-7 items-center justify-center rounded-full text-[#8aa4be] transition hover:bg-white/10 hover:text-white"
+        >
+          <LogOut aria-hidden="true" className="size-3.5" />
+        </button>
+      </form>
     </div>
   );
 }

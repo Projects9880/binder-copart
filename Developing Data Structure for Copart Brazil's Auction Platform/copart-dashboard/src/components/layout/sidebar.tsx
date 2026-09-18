@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Filter, MessageCircle,
   BarChart3, Gavel, ShoppingCart, AlertTriangle, Lightbulb,
   ChevronRight, Target, Route, Map, TrendingUp, FileText, Images, Bot, Shield,
+  LogOut,
 } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { navHref } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 
@@ -53,11 +54,7 @@ const navGroups = [
 
 function useQueryAfterHydration() {
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState("");
-  useEffect(() => {
-    setQuery(searchParams.toString());
-  }, [searchParams]);
-  return query;
+  return searchParams.toString();
 }
 
 function SidebarNav() {
@@ -135,13 +132,27 @@ export function Sidebar() {
       </div>
 
       <div className="px-6 py-4 border-t border-[#1a3050]">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#00a85a]" />
-          <span className="text-white text-xs font-bold">Exportações reais</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#00a85a]" />
+              <span className="text-white text-xs font-bold">Acesso seguro</span>
+            </div>
+            <p className="text-[#8aa4be] text-[10px] mt-1 truncate">
+              Sessão autenticada
+            </p>
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              title="Sair"
+              aria-label="Sair do dashboard"
+              className="flex size-8 items-center justify-center rounded-lg text-[#6b8098] transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00b8cf]"
+            >
+              <LogOut aria-hidden="true" className="size-4" />
+            </button>
+          </form>
         </div>
-        <p className="text-[#8aa4be] text-[10px] mt-1 truncate">
-          Meta + GA4 ago/26 · Copart set/26
-        </p>
       </div>
     </aside>
   );

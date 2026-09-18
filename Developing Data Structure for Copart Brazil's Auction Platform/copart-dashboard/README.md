@@ -2,21 +2,29 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Crie o arquivo local de configuração:
+
+```bash
+cp .env.example .env.local
+openssl rand -base64 32
+```
+
+Use o valor gerado como `AUTH_SECRET` e preencha `DASHBOARD_USERS` em
+`.env.local` com os usuários autorizados. Nunca envie esse arquivo ao
+repositório.
+
+Depois, inicie o servidor:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000). O acesso a todas as rotas
+de `/dashboard` exige uma sessão autenticada, que expira após 12 horas.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> O login atual aceita a lista de usuários em `DASHBOARD_USERS`. Para MFA,
+> recuperação de senha, auditoria ou permissões por papel, integre um
+> provedor de identidade corporativo.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
