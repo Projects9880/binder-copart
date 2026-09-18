@@ -61,7 +61,7 @@ export function ChannelGoalCard({ goal, className }: ChannelGoalCardProps) {
               />
             </div>
             <p className="text-[10px] font-bold text-[#6c7685] mt-0.5">
-              {entrantes.percentage.toFixed(1)}% da meta da unidade (rateio)
+              {entrantes.percentage.toFixed(1)}% da meta da unidade
             </p>
           </div>
           <div>

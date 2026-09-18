@@ -137,7 +137,10 @@ export default async function ChannelGoalsPage({
           ))}
         </div>
 
-        <SectionTitle>Canais de meta — contribuição, não alvo mock</SectionTitle>
+        <SectionTitle>
+          Como cada canal contribui para a meta da unidade
+          <InfoTip text="A Copart não tem meta oficial por canal. Cada card mostra o cadastro alocado pelo first-touch GA4 como fatia da meta da unidade (20 mil entrantes)." />
+        </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...withData, ...withoutData].map((goal) => (
             <ChannelGoalCard key={goal.channel} goal={goal} />
