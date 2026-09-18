@@ -10,6 +10,7 @@ export interface TreemapItem {
   value: number;
   color: string;
   share: number;
+  [key: string]: string | number;
 }
 
 function isDark(hex: string) {
