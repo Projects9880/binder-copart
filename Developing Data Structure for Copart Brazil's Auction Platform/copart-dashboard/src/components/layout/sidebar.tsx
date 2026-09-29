@@ -34,6 +34,7 @@ const navGroups = [
   {
     label: "Operacional",
     items: [
+      { label: "Mídia Paga", href: "/dashboard/paid-media", icon: "BarChart3" },
       { label: "Scorecard de campanhas", href: "/dashboard/campaigns", icon: "BarChart3" },
       { label: "Campanhas Leilão", href: "/dashboard/auction-campaigns", icon: "Gavel" },
       { label: "Campanhas Select", href: "/dashboard/direct-campaigns", icon: "ShoppingCart" },

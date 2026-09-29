@@ -8,6 +8,7 @@ import { navHref } from "@/lib/filters";
 
 const links = [
   { href: "/dashboard", label: "Geral" },
+  { href: "/dashboard/paid-media", label: "Mídia Paga" },
   { href: "/dashboard/funnel", label: "Funil" },
   { href: "/dashboard/direct-sales", label: "Select" },
   { href: "/dashboard/channel-goals", label: "Metas" },
